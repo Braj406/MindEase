@@ -4,34 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Journal - MindEase</title>
-
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Google Fonts: Inter & Playfair Display -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-
-    <!-- Feather Icons -->
     <script src="https://unpkg.com/feather-icons"></script>
-    
-    <!-- Chart.js for Mood Tracker -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Your Custom Stylesheet -->
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body class="antialiased">
 
-    <!-- This view is shown briefly while checking authentication -->
     <div id="loading-view" class="view active h-screen flex items-center justify-center">
         <p class="text-gray-500">Loading your journal...</p>
     </div>
 
-    <!-- Main App Wrapper (Sidebar + Main Content) -->
     <div id="app-wrapper" class="hidden flex flex-col md:flex-row h-screen bg-gray-50">
-        <!-- Sidebar -->
         <nav id="sidebar" class="hidden md:flex w-64 bg-white shadow-md flex-col p-6 rounded-r-xl z-20">
             <h1 class="text-3xl font-bold text-gray-800 font-serif mb-10">Journal</h1>
             <ul class="space-y-3">
@@ -48,9 +35,7 @@
             </button>
         </nav>
 
-        <!-- Main Content -->
         <main class="flex-1 p-4 md:p-8 overflow-y-auto relative">
-            <!-- Mobile Header -->
             <div class="md:hidden flex justify-between items-center p-4 bg-white shadow-sm rounded-lg mb-4">
                 <h2 class="text-2xl font-bold text-gray-800 font-serif">Journal</h2>
                 <button id="mobile-menu-btn" class="p-2 rounded-md hover:bg-gray-100">
@@ -58,7 +43,6 @@
                 </button>
             </div>
             
-            <!-- Calendar View -->
             <div id="calendar-view" class="view">
                 <header class="flex justify-between items-center mb-6">
                     <h2 id="month-year-header" class="text-2xl sm:text-4xl font-bold text-gray-800"></h2>
@@ -74,13 +58,11 @@
                 <div id="calendar-grid" class="grid grid-cols-7 bg-white rounded-xl shadow"></div>
             </div>
 
-            <!-- Memories View -->
             <div id="memories-view" class="view">
                 <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-6">My Happy Memories</h2>
                 <div id="memories-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </div>
 
-            <!-- Mood Tracker View -->
             <div id="mood-tracker-view" class="view">
                 <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">Mood Tracker</h2>
                 <p class="text-gray-500 mb-6">Learn more about yourself and achieve better health.</p>
@@ -102,7 +84,6 @@
                 </div>
             </div>
 
-            <!-- Breathing Exercise View -->
             <div id="breathing-view" class="view h-full w-full relative flex flex-col items-center justify-center bg-white rounded-xl shadow">
                 <div id="breathing-setup" class="text-center p-8">
                     <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-2">Mindful Breathing</h2>
@@ -131,7 +112,6 @@
                 </div>
             </div>
 
-            <!-- Entry Detail/Edit View -->
             <div id="entry-view" class="view">
                 <header class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 sm:gap-2">
                     <input type="text" id="entry-title-input" class="text-2xl sm:text-4xl font-bold text-gray-800 bg-transparent outline-none w-full" placeholder="Your Title Here">
@@ -175,7 +155,6 @@
         </main>
     </div>
 
-    <!-- Mobile Sidebar & Modals -->
     <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
     <div id="mobile-sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg flex flex-col p-6 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out">
         <div class="flex justify-between items-center mb-10">
@@ -215,7 +194,6 @@
         </div>
     </div>
 
-    <!-- Main Application Logic -->
     <script type="module" src="js/main.js"></script>
 
 </body>
