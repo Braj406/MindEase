@@ -455,15 +455,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await response.json();
                 const fullQuoteText = result.candidates[0].content.parts[0].text;
                 
-                // Parse the quote and author
                 const parts = fullQuoteText.split(' - ');
-                const quote = parts[0].replace(/"/g, ''); // Remove quotes
+                const quote = parts[0].replace(/"/g, '');
                 const author = parts.length > 1 ? `- ${parts[1]}` : '';
 
                 dom.dailyQuoteText.textContent = `"${quote}"`;
                 dom.dailyQuoteAuthor.textContent = author;
 
-                // Save to local storage for today
                 localStorage.setItem('dailyQuote', JSON.stringify({
                     date: todayStr,
                     quote: `"${quote}"`,
@@ -472,7 +470,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             } catch (error) {
                 console.error("Error fetching daily quote:", error);
-                // Fallback to a default quote if the API fails
                 dom.dailyQuoteText.textContent = `"The best way to capture moments is to pay attention."`;
                 dom.dailyQuoteAuthor.textContent = `- Jon Kabat-Zinn`;
             }
