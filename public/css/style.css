@@ -5,6 +5,7 @@ body {
     /* Gradient background */
     background-image: linear-gradient(to bottom right, #D8B4FE, #CFE9F1);
     font-family: 'Nunito', sans-serif;
+    transition: background-image 0.5s ease-in-out;
 }
 
 body.modal-open {
@@ -123,4 +124,55 @@ body.journal-app-body {
     border-width: 2px;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
     font-weight: 600;
+}
+
+/* --- NEW: Animated Gradient Keyframes --- */
+@keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* --- Theme Styles --- */
+.theme-option {
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background-size: 400% 400%;
+    animation: gradient-animation 15s ease infinite;
+}
+.theme-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+}
+.theme-option.active {
+    border-color: #ffffff;
+    box-shadow: 0 0 0 4px #3b82f6, 0 8px 12px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+}
+
+/* --- NEW: Updated Theme Gradients --- */
+.theme-default { background-image: linear-gradient(45deg, #a8b2ff, #c2d2ff, #e0e7ff); }
+.theme-sunset { background-image: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb); }
+.theme-serenity { background-image: linear-gradient(45deg, #84fab0, #8fd3f4, #a1c4fd); }
+.theme-meadow { background-image: linear-gradient(45deg, #c1dfc4, #deecdd, #f6fff8); }
+.theme-dusk { background-image: linear-gradient(45deg, #6b73ff, #a2a7ff, #c8cbff); }
+
+body #app-wrapper {
+    transition: background-image 0.5s ease-in-out;
+}
+
+body.theme-default #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #eef2ff, #f9fafb); }
+body.theme-sunset #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #fff1f2, #fefce8); }
+body.theme-serenity #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #ecfdf5, #f0f9ff); }
+body.theme-meadow #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #f0fdf4, #f7fee7); }
+body.theme-dusk #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #e0e7ff, #f3f4f6); }
+
+/* Custom Font Themes */
+body.theme-serenity, body.theme-meadow, body.theme-dusk {
+    font-family: 'Lora', serif;
+}
+body.theme-serenity .font-serif, body.theme-meadow .font-serif, body.theme-dusk .font-serif {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
 }
