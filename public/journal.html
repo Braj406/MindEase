@@ -7,10 +7,54 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/feather-icons"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- --- TOUR: Added Shepherd.js library and theme --- -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/css/shepherd.css"/>
+    <style>
+        /* --- TOUR: Basic styling for the tour popups --- */
+        .shepherd-button {
+            background: #3b82f6;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1.5rem;
+            color: white;
+            transition: background-color 0.2s;
+        }
+        .shepherd-button:not(.shepherd-button-secondary):hover {
+            background: #2563eb;
+        }
+        .shepherd-button.shepherd-button-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        .shepherd-button.shepherd-button-secondary:hover {
+            background: #d1d5db;
+        }
+        .shepherd-header {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .shepherd-title {
+            font-weight: bold;
+            color: #1f2937;
+            font-size: 1.125rem;
+        }
+        .shepherd-text {
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #4b5563;
+        }
+        .shepherd-cancel-icon {
+            font-size: 1.5rem;
+        }
+        .shepherd-cancel-icon:hover {
+            color: #ef4444;
+        }
+    </style>
 </head>
 <body class="antialiased">
 
@@ -20,12 +64,16 @@
 
     <div id="app-wrapper" class="hidden flex flex-col md:flex-row h-screen bg-gray-50">
         <nav id="sidebar" class="hidden md:flex w-64 bg-white shadow-md flex-col p-6 rounded-r-xl z-20">
-            <h1 class="text-3xl font-bold text-gray-800 font-serif mb-10">Journal</h1>
+            <div class="flex items-center mb-10">
+                <img id="sidebar-profile-pic" src="https://placehold.co/40x40/e2e8f0/4a5568?text=ME" class="w-10 h-10 rounded-full mr-3">
+                <h1 class="text-3xl font-bold text-gray-800 font-serif">Journal</h1>
+            </div>
             <ul class="space-y-3">
                 <li><a href="#" class="nav-link active" data-target="calendar-view"><i data-feather="calendar" class="mr-3"></i>Calendar</a></li>
                 <li><a href="#" class="nav-link" data-target="memories-view"><i data-feather="smile" class="mr-3"></i>Happy Memories</a></li>
                 <li><a href="#" class="nav-link" data-target="mood-tracker-view"><i data-feather="bar-chart-2" class="mr-3"></i>Mood Tracker</a></li>
                 <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3"></i>Breathing</a></li>
+                <li><a href="#" class="nav-link" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
             </ul>
             <button id="add-entry-btn" class="mt-auto w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center mb-4">
                 <i data-feather="plus" class="mr-2"></i>New Entry
@@ -152,6 +200,38 @@
                     </div>
                 </div>
             </div>
+
+            <div id="settings-view" class="view">
+                <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-6">Settings</h2>
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-xl shadow">
+                        <h3 class="font-bold text-lg mb-4">Profile Picture</h3>
+                        <div class="flex items-center gap-6">
+                            <img id="settings-profile-pic" src="https://placehold.co/80x80/e2e8f0/4a5568?text=ME" class="w-20 h-20 rounded-full object-cover">
+                            <div>
+                                <label for="profile-pic-upload" class="cursor-pointer bg-gray-800 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-colors hover:bg-gray-700">
+                                    Upload New Picture
+                                </label>
+                                <input type="file" id="profile-pic-upload" class="hidden" accept="image/*">
+                                <p class="text-sm text-gray-500 mt-2">Max file size: 750KB</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow">
+                        <h3 class="font-bold text-lg mb-4">App Theme</h3>
+                        <div id="theme-selector" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                            <!-- Existing Themes -->
+                            <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-default">Default</div>
+                            <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-sunset">Sunset</div>
+                            <!-- New Themes -->
+                            <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-serenity">Serenity</div>
+                            <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-meadow">Meadow</div>
+                            <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-dusk">Dusk</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -166,6 +246,7 @@
             <li><a href="#" class="nav-link" data-target="memories-view"><i data-feather="smile" class="mr-3"></i>Happy Memories</a></li>
             <li><a href="#" class="nav-link" data-target="mood-tracker-view"><i data-feather="bar-chart-2" class="mr-3"></i>Mood Tracker</a></li>
             <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3"></i>Breathing</a></li>
+            <li><a href="#" class="nav-link" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
         </ul>
         <button id="add-entry-btn-mobile" class="mt-auto w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center mb-4"><i data-feather="plus" class="mr-2"></i>New Entry</button>
         <button id="logout-btn-mobile" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-300 flex items-center justify-center"><i data-feather="log-out" class="mr-2"></i>Logout</button>
@@ -194,7 +275,10 @@
         </div>
     </div>
 
+    <!-- --- TOUR: Added the new tour.js script and Shepherd.js library script --- -->
+    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/js/shepherd.min.js"></script>
     <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/tour.js"></script>
 
 </body>
 </html>
