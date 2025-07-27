@@ -3,6 +3,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebas
 import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+// --- TOUR: Import the tour starting function ---
+import { startAppTour } from './tour.js';
+
 // Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSyAV0So2hi6JjI7Yp3KS4OOyKVdESkR-W5Q",
@@ -22,6 +25,7 @@ let breathingDuration = 0;
 let breathingInterval, countdownInterval;
 let journalEntries = [], moods = {};
 let moodChartInstance = null;
+const THEME_CLASSES = ['theme-default', 'theme-sunset', 'theme-serenity', 'theme-meadow', 'theme-dusk'];
 
 // --- Custom Alert ---
 const showCustomAlert = (message, title = 'Notification', isPrompt = false, defaultValue = '', showCancel = false) => {
@@ -116,6 +120,12 @@ document.addEventListener('DOMContentLoaded', () => {
         toolbar: document.getElementById('toolbar'),
         aiPromptContainer: document.getElementById('ai-prompt-container'),
         happyMemoryContainer: document.getElementById('happy-memory-container'),
+        // Settings elements
+        sidebarProfilePic: document.getElementById('sidebar-profile-pic'),
+        settingsProfilePic: document.getElementById('settings-profile-pic'),
+        profilePicUpload: document.getElementById('profile-pic-upload'),
+        themeSelector: document.getElementById('theme-selector'),
+        themeOptions: document.querySelectorAll('.theme-option'),
     };
 
     // --- State and Data ---
@@ -139,6 +149,33 @@ document.addEventListener('DOMContentLoaded', () => {
             renderCalendar(currentCalendarDate);
             if(document.getElementById('mood-tracker-view').classList.contains('active')) {
                 renderMoodTracker();
+            }
+        });
+
+        // --- TOUR: Updated logic to check Firestore for tour completion ---
+        const settingsRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/settings`, 'userProfile');
+        onSnapshot(settingsRef, (doc) => {
+            let settings = {};
+            let shouldStartTour = false;
+
+            if (doc.exists()) {
+                settings = doc.data();
+                // Start tour only if the tourCompleted flag is NOT true.
+                if (settings.tourCompleted !== true) {
+                    shouldStartTour = true;
+                }
+            } else {
+                // This is a brand new user with no settings document yet.
+                settings = { theme: 'theme-default' }; // Apply default theme
+                shouldStartTour = true; // A new user should always get the tour.
+            }
+
+            applySettings(settings);
+
+            if (shouldStartTour) {
+                // We use a small timeout to ensure the DOM is fully painted before starting the tour.
+                // Pass the necessary Firebase details to the tour function.
+                setTimeout(() => startAppTour(db, userId, canvasAppId), 500);
             }
         });
 
@@ -410,6 +447,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const promptForMood = async () => {
         const todayStr = getLocalDateString(new Date());
+        // --- TOUR: Switched from localStorage to a user-specific key ---
         if (localStorage.getItem(`moodPromptLastShown_${userId}`) !== todayStr) {
             dom.moodModal.classList.add('active');
         }
@@ -518,6 +556,32 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.aiPromptBtn.disabled = false;
             dom.aiPromptBtn.innerHTML = `<i data-feather="sparkles" class="w-5 h-5"></i> Get AI Prompt`;
             feather.replace();
+        }
+    };
+
+    // --- Settings Functions ---
+    const applySettings = (settings) => {
+        if (settings.profilePicture) {
+            dom.sidebarProfilePic.src = settings.profilePicture;
+            dom.settingsProfilePic.src = settings.profilePicture;
+        }
+        if (settings.theme) {
+            document.body.classList.remove(...THEME_CLASSES);
+            document.body.classList.add(settings.theme);
+            
+            dom.themeOptions.forEach(opt => {
+                opt.classList.toggle('active', opt.dataset.theme === settings.theme);
+            });
+        }
+    };
+
+    const saveSetting = async (setting) => {
+        const settingsRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/settings`, 'userProfile');
+        try {
+            await setDoc(settingsRef, setting, { merge: true });
+        } catch (error) {
+            console.error("Error saving setting:", error);
+            showCustomAlert("Could not save your preference.", "Error");
         }
     };
 
@@ -640,6 +704,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const todayStr = getLocalDateString(new Date());
             try {
                 await setDoc(doc(db, `artifacts/${canvasAppId}/users/${userId}/moods`, todayStr), { moodEmoji: emoji.dataset.mood });
+                // --- TOUR: Switched from localStorage to a user-specific key ---
                 localStorage.setItem(`moodPromptLastShown_${userId}`, todayStr);
                 dom.moodModal.classList.remove('active');
             } catch (error) {
@@ -664,5 +729,24 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.aiPromptBtn.addEventListener('click', getAIPrompt);
         dom.formatButtons.forEach(button => button.addEventListener('click', () => formatText(button.dataset.command)));
         dom.backBtn.addEventListener('click', () => showView('calendar-view'));
+
+        // --- Settings Event Listeners ---
+        dom.profilePicUpload.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const base64String = await encodeImageAsBase64(file);
+                if (base64String) {
+                    await saveSetting({ profilePicture: base64String });
+                    showCustomAlert("Profile picture updated!", "Success");
+                }
+            }
+        });
+
+        dom.themeOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                const theme = option.dataset.theme;
+                saveSetting({ theme: theme });
+            });
+        });
     }
 });
