@@ -27,6 +27,9 @@
 
     <!-- NEW: Custom styles for the advanced journal view -->
     <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
         .font-playfair-display { font-family: 'Playfair Display', serif; }
         .font-lora { font-family: 'Lora', serif; }
 
@@ -47,7 +50,7 @@
             pointer-events: none;
         }
 
-        /* Ensure views are hidden by default */
+        /* Base view styling */
         .view {
             display: none;
         }
@@ -55,21 +58,22 @@
             display: block;
         }
         
-        /* Ensure mobile sidebar starts off-screen */
+        /* Mobile sidebar starts off-screen */
         #mobile-sidebar-menu {
             transform: translateX(-100%);
         }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased bg-stone-50">
 
     <div id="loading-view" class="view active h-screen flex items-center justify-center">
         <p class="text-gray-500">Loading your journal...</p>
     </div>
 
-    <div id="app-wrapper" class="hidden flex flex-col md:flex-row h-screen bg-gray-50">
+    <div id="app-wrapper" class="hidden flex-col md:flex-row h-screen">
         <!-- Sidebar Navigation -->
         <nav id="sidebar" class="hidden md:flex w-64 bg-white shadow-md flex-col p-6 rounded-r-xl z-20">
+            <!-- Sidebar content remains the same -->
             <div class="flex items-center justify-between mb-10">
                 <div class="flex items-center">
                     <img id="sidebar-profile-pic" src="https://placehold.co/40x40/e2e8f0/4a5568?text=ME" class="w-10 h-10 rounded-full mr-3">
@@ -84,18 +88,10 @@
                 <li><a href="#" class="nav-link active" data-target="calendar-view"><i data-feather="calendar" class="mr-3"></i>Calendar</a></li>
                 <li><a href="#" class="nav-link" data-target="memories-view"><i data-feather="smile" class="mr-3"></i>Happy Memories</a></li>
                 <li><a href="#" class="nav-link" data-target="mood-tracker-view"><i data-feather="bar-chart-2" class="mr-3"></i>Mood Tracker</a></li>
-                <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3"></i>Breathing</a></li>
-                <li><a href="#" class="nav-link" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
             </ul>
             <div class="mt-auto space-y-4">
-                <button id="gratitude-btn" class="w-full bg-yellow-400 text-yellow-900 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-yellow-500 flex items-center justify-center">
-                    <i data-feather="gift" class="mr-2"></i>Daily Gratitude
-                </button>
-                <button id="add-entry-btn" class="w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center">
+                <button id="add-entry-btn" class="w-full bg-stone-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-stone-700 flex items-center justify-center">
                     <i data-feather="plus" class="mr-2"></i>New Entry
-                </button>
-                <button id="logout-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-300 flex items-center justify-center">
-                    <i data-feather="log-out" class="mr-2"></i>Logout
                 </button>
             </div>
         </nav>
@@ -108,56 +104,45 @@
                 </button>
             </div>
             
-            <!-- Calendar View (Unchanged) -->
             <div id="calendar-view" class="view">
+                <!-- Calendar content remains the same -->
                 <header class="flex justify-between items-center mb-6">
-                    <h2 id="month-year-header" class="text-2xl sm:text-4xl font-bold text-gray-800"></h2>
-                    <div>
-                        <button id="prev-month-btn" class="p-2 hover:bg-gray-200 rounded-full"><i data-feather="chevron-left" class="w-6 h-6"></i></button>
-                        <button id="next-month-btn" class="p-2 hover:bg-gray-200 rounded-full"><i data-feather="chevron-right" class="w-6 h-6"></i></button>
-                    </div>
+                    <h2 id="month-year-header" class="text-2xl sm:text-4xl font-bold text-gray-800">July 2025</h2>
                 </header>
-                <div id="prompt-of-the-day-section" class="mb-6 p-4 bg-white rounded-xl shadow text-center cursor-pointer hover:bg-gray-50" title="Click to start writing about this">
-                    <p class="text-sm font-semibold text-purple-600">PROMPT OF THE DAY</p>
-                    <p id="prompt-of-the-day-text" class="text-lg italic text-gray-700 mt-1">What's something you're looking forward to?</p>
-                </div>
                 <div id="calendar-grid" class="grid grid-cols-7 bg-white rounded-xl shadow"></div>
             </div>
 
-            <!-- Other Views (Unchanged) -->
-            <div id="memories-view" class="view">...</div>
-            <div id="mood-tracker-view" class="view">...</div>
-            <div id="breathing-view" class="view">...</div>
-            <div id="settings-view" class="view">...</div>
+            <div id="memories-view" class="view">
+                <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-6">My Happy Memories</h2>
+                <div id="memories-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="mood-tracker-view" class="view">
+                 <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-6">Mood Tracker</h2>
+                 <div class="bg-white p-6 rounded-xl shadow"><canvas id="mood-chart"></canvas></div>
+            </div>
 
             <!-- ================================================================= -->
             <!-- NEW & IMPROVED: Journal Entry View -->
-            <!-- This entire #entry-view block has been replaced. -->
             <!-- ================================================================= -->
             <div id="entry-view" class="view">
-                <!-- Header with Title and Buttons -->
                 <header class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-2">
                     <input type="text" id="entry-title-input" class="font-playfair-display text-3xl sm:text-4xl font-bold text-stone-700 bg-transparent outline-none w-full placeholder-stone-400" placeholder="A new chapter...">
                     <div class="flex gap-2 w-full sm:w-auto justify-end">
                         <button id="back-btn" class="bg-stone-200 text-stone-800 font-semibold py-2 px-6 rounded-lg shadow-sm transition-colors hover:bg-stone-300">Back</button>
-                        <button id="save-btn" class="bg-stone-800 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors hover:bg-stone-700 hidden">Save</button>
-                        <button id="delete-btn" class="bg-red-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors hover:bg-red-700 hidden">Delete</button>
+                        <button id="save-btn" class="bg-stone-800 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors hover:bg-stone-700">Save</button>
                     </div>
                 </header>
     
-                <!-- Journal Book Container -->
                 <div class="flex w-full max-w-6xl mx-auto bg-stone-800 shadow-2xl rounded-lg" style="min-height: 65vh;">
-                    <!-- Left Page (for the image) -->
                     <div class="w-1/2 bg-[#F4F1EC] rounded-l-lg p-8 flex flex-col items-center justify-center relative">
                         <div class="absolute top-6 left-6 text-stone-500 font-lora">
-                            <p id="entry-date-display" class="font-semibold">August 4, 2025</p>
+                            <p id="entry-date-display" class="font-semibold"></p>
                         </div>
                         <label for="entry-image-upload" id="entry-image-label" class="cursor-pointer group">
                             <div class="relative w-full max-w-sm transform -rotate-2 group-hover:rotate-0 group-hover:scale-105 transition-transform duration-300">
-                                <!-- This div provides the white "polaroid" border and shadow -->
                                 <div class="bg-white p-3 pb-8 rounded-md shadow-lg">
                                      <img id="entry-image-preview" src="" class="h-64 w-full object-cover bg-stone-100 hidden">
-                                     <!-- Placeholder when no image is uploaded -->
                                      <div id="image-upload-placeholder" class="h-64 w-full bg-stone-100 border-2 border-dashed border-stone-300 rounded-md flex flex-col items-center justify-center text-stone-500">
                                         <i data-feather="camera" class="w-12 h-12 mb-2"></i>
                                         <span class="font-semibold">Add a snapshot</span>
@@ -169,103 +154,92 @@
                         <input type="file" id="entry-image-upload" class="hidden" accept="image/*">
                     </div>
     
-                    <!-- Book Spine -->
                     <div class="w-8 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-600 shadow-inner"></div>
     
-                    <!-- Right Page (for the text) -->
                     <div class="w-1/2 flex flex-col">
                         <div class="flex-grow p-8 ruled-paper rounded-r-lg">
-                            <!-- Rich Text Toolbar -->
                             <div id="toolbar" class="flex flex-wrap gap-1 mb-4 p-2 bg-stone-100/50 rounded-lg backdrop-blur-sm sticky top-4 z-10">
                                 <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="bold" title="Bold"><i data-feather="bold" class="w-5 h-5"></i></button>
                                 <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="italic" title="Italic"><i data-feather="italic" class="w-5 h-5"></i></button>
                                 <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="underline" title="Underline"><i data-feather="underline" class="w-5 h-5"></i></button>
                                 <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="strikeThrough" title="Strikethrough"><i data-feather="type" class="w-5 h-5"></i></button>
-                                <div class="border-l border-stone-300 mx-2"></div>
-                                <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="insertUnorderedList" title="Bullet List"><i data-feather="list" class="w-5 h-5"></i></button>
-                                <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="insertOrderedList" title="Numbered List"><i data-feather="hash" class="w-5 h-5"></i></button>
                             </div>
-                            <!-- The actual text editor -->
                             <div id="entry-content-editor" contenteditable="true" class="w-full text-stone-700 font-lora text-lg leading-relaxed outline-none resize-none min-h-[40vh]" placeholder="Start writing your story..."></div>
                         </div>
                         
-                        <!-- Footer actions on the page -->
                         <div class="bg-[#FFFCF5] rounded-br-lg p-6 border-t border-stone-200 flex items-center justify-between">
                             <div id="happy-memory-container" class="flex items-center">
                                 <input type="checkbox" id="happy-memory-checkbox" class="h-5 w-5 rounded border-gray-300 text-amber-500 focus:ring-amber-400">
                                 <label for="happy-memory-checkbox" class="ml-2 block text-sm font-medium text-stone-700">Add to Happy Memories ✨</label>
                             </div>
-                            <div id="entry-actions-container" class="flex gap-2">
-                                <button id="ai-prompt-btn" class="flex items-center gap-2 bg-teal-100 text-teal-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors hover:bg-teal-200 hidden">
-                                    <i data-feather="edit-3" class="w-5 h-5"></i>
-                                    Get AI Prompt
-                                </button>
-                                <button id="analyze-entry-btn" class="flex items-center gap-2 bg-indigo-100 text-indigo-800 font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors hover:bg-indigo-200 hidden">
-                                    <i data-feather="sparkles" class="w-5 h-5"></i>
-                                    Analyze Entry
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- AI Insights Container (remains below the book) -->
-                <div id="ai-insights-container" class="bg-white p-6 rounded-xl shadow mt-6 hidden max-w-6xl mx-auto">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i data-feather="cpu" class="mr-2"></i>AI Insights</h3>
-                    <div id="ai-insights-content" class="space-y-4">
-                        <div>
-                            <h4 class="font-semibold text-gray-600">Sentiment</h4>
-                            <p id="ai-sentiment" class="text-gray-800"></p>
-                        </div>
-                        <div>
-                            <h4 class="font-semibold text-gray-600">Summary</h4>
-                            <p id="ai-summary" class="text-gray-800 leading-relaxed"></p>
                         </div>
                     </div>
                 </div>
             </div>
-
         </main>
     </div>
 
-    <!-- Modals and Mobile Sidebar (Unchanged) -->
-    <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden"></div>
-    <div id="mobile-sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg flex flex-col p-6 z-50 transition-transform duration-300 ease-in-out">...</div>
-    <div id="mood-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">...</div>
-    <div id="gratitude-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">...</div>
-    <div id="entry-selection-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">...</div>
-    <div id="custom-alert-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">...</div>
-
-    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/js/shepherd.min.js"></script>
-    
-    <!-- 
-      NOTE: Ideally, this logic should be in your external JS files (main.js, etc.).
-      It is included here for a complete, runnable example.
-    -->
+    <!-- The script is now included directly in the HTML for reliability -->
     <script type="module">
       // Initialize Feather Icons
       feather.replace();
 
-      // --- Basic View Switching Logic ---
-      const navLinks = document.querySelectorAll('.nav-link');
-      const views = document.querySelectorAll('.view');
+      // --- DOM Element Cache ---
+      // Caching elements for quick access
+      const dom = {
+          views: document.querySelectorAll('.view'),
+          navLinks: document.querySelectorAll('.nav-link'),
+          addEntryBtn: document.getElementById('add-entry-btn'),
+          // Entry View Elements
+          entryView: document.getElementById('entry-view'),
+          entryTitleInput: document.getElementById('entry-title-input'),
+          entryContentEditor: document.getElementById('entry-content-editor'),
+          entryDateDisplay: document.getElementById('entry-date-display'),
+          entryImageUpload: document.getElementById('entry-image-upload'),
+          entryImagePreview: document.getElementById('entry-image-preview'),
+          imageUploadPlaceholder: document.getElementById('image-upload-placeholder'),
+          saveBtn: document.getElementById('save-btn'),
+          backBtn: document.getElementById('back-btn'),
+          // Other view elements
+          calendarView: document.getElementById('calendar-view'),
+      };
 
+      // --- View Switching Logic ---
       function switchView(targetId) {
-        views.forEach(view => {
-          view.classList.remove('active');
-          if (view.id === targetId) {
-            view.classList.add('active');
-          }
+        dom.views.forEach(view => {
+          view.classList.toggle('active', view.id === targetId);
         });
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            if(link.dataset.target === targetId) {
-                link.classList.add('active');
-            }
-        })
+        dom.navLinks.forEach(link => {
+            link.classList.toggle('active', link.dataset.target === targetId);
+        });
+        feather.replace(); // Re-run feather icons in case new ones are displayed
       }
 
-      navLinks.forEach(link => {
+      // --- Journal Entry Logic ---
+      // This function is now updated to work with the new "book" layout
+      function showEntryView(date, entryData = null) {
+          switchView('entry-view');
+          
+          // Set the date display on the left page of the book
+          dom.entryDateDisplay.textContent = new Date(date).toLocaleDateString('en-US', {
+              year: 'numeric', month: 'long', day: 'numeric'
+          });
+
+          // Handle the image preview and placeholder logic
+          const hasImage = entryData && entryData.image;
+          dom.entryImagePreview.src = hasImage ? entryData.image : '';
+          dom.entryImagePreview.classList.toggle('hidden', !hasImage);
+          dom.imageUploadPlaceholder.classList.toggle('hidden', hasImage);
+          
+          // Populate title and content
+          dom.entryTitleInput.value = entryData ? entryData.title : '';
+          dom.entryContentEditor.innerHTML = entryData ? entryData.text : '';
+      }
+
+      // --- Event Listeners ---
+      
+      // Navigation links
+      dom.navLinks.forEach(link => {
         link.addEventListener('click', (e) => {
           e.preventDefault();
           const targetId = e.currentTarget.dataset.target;
@@ -273,75 +247,48 @@
         });
       });
       
-      // --- Journal Entry View Logic ---
-      const entryImagePreview = document.getElementById('entry-image-preview');
-      const imageUploadPlaceholder = document.getElementById('image-upload-placeholder');
-      const entryDateDisplay = document.getElementById('entry-date-display');
-      const imageUploadInput = document.getElementById('entry-image-upload');
+      // "New Entry" button
+      dom.addEntryBtn.addEventListener('click', () => {
+          // For a new entry, pass today's date and null for entry data
+          showEntryView(new Date(), null);
+      });
 
-      function showEntryView(date, entryData = null) {
-          switchView('entry-view');
-          
-          entryDateDisplay.textContent = new Date(date).toLocaleDateString('en-US', {
-              year: 'numeric', month: 'long', day: 'numeric'
-          });
+      // "Back" button from entry view
+      dom.backBtn.addEventListener('click', () => {
+          switchView('calendar-view');
+      });
 
-          if (entryData && entryData.image) {
-              entryImagePreview.src = entryData.image;
-              entryImagePreview.classList.remove('hidden');
-              imageUploadPlaceholder.classList.add('hidden');
-          } else {
-              entryImagePreview.src = '';
-              entryImagePreview.classList.add('hidden');
-              imageUploadPlaceholder.classList.remove('hidden');
-          }
-          // Populate other fields like title and content here
-      }
-
-      imageUploadInput.addEventListener('change', function(event) {
+      // Image uploader
+      dom.entryImageUpload.addEventListener('change', function(event) {
           if (event.target.files && event.target.files[0]) {
               const reader = new FileReader();
               reader.onload = function(e) {
-                  entryImagePreview.src = e.target.result;
-                  entryImagePreview.classList.remove('hidden');
-                  imageUploadPlaceholder.classList.add('hidden');
+                  dom.entryImagePreview.src = e.target.result;
+                  dom.entryImagePreview.classList.remove('hidden');
+                  dom.imageUploadPlaceholder.classList.add('hidden');
               }
               reader.readAsDataURL(event.target.files[0]);
           }
       });
       
-      // --- Toolbar Logic ---
-      const formatBtns = document.querySelectorAll('.format-btn');
-      formatBtns.forEach(btn => {
+      // Rich text editor toolbar
+      document.querySelectorAll('.format-btn').forEach(btn => {
           btn.addEventListener('click', () => {
               document.execCommand(btn.dataset.command, false, null);
           });
       });
 
-      // --- Initial Load ---
+      // --- Initial Application Load ---
       window.addEventListener('load', () => {
-          // Hide loading and show app
+          // Hide loading screen and show the main app
           document.getElementById('loading-view').classList.remove('active');
-          document.getElementById('app-wrapper').classList.remove('hidden');
           document.getElementById('app-wrapper').classList.add('flex');
+          document.getElementById('app-wrapper').classList.remove('hidden');
 
           // Set the initial view to the calendar
           switchView('calendar-view');
-
-          // Example: Make 'New Entry' button show the new entry view
-          document.getElementById('add-entry-btn').addEventListener('click', () => {
-              showEntryView(new Date()); // Pass today's date for a new entry
-          });
-          document.getElementById('back-btn').addEventListener('click', () => {
-              switchView('calendar-view');
-          });
       });
 
     </script>
-    
-    <!-- Keep your external script links if they contain more complex logic -->
-    <!-- <script type="module" src="js/main.js"></script> -->
-    <!-- <script type="module" src="js/tour.js"></script> -->
-
 </body>
 </html>
