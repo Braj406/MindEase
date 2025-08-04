@@ -24,39 +24,6 @@ body.modal-open {
     line-height: 1.6;
 }
 
-.blinking-cursor {
-    font-weight: 100;
-    font-size: 1.2em;
-    color: #A7F3D0;
-    animation: blink 1s step-end infinite;
-}
-@keyframes blink {
-    from, to { color: transparent }
-    50% { color: #A7F3D0; }
-}
-
-@keyframes gentle-float {
-    0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-    50% { transform: translateY(-30px) rotate(4deg) scale(1.05); }
-}
-.float-animation { animation: gentle-float 8s ease-in-out infinite; }
-
-.scroll-down {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    animation: bounce 2s infinite;
-}
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-20px); }
-    60% { transform: translateY(-10px); }
-}
-
-#auth-modal { transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; }
-#auth-modal .modal-content { transition: transform 0.3s ease-in-out; }
-
 /* --- Journal App Styles --- */
 body.journal-app-body {
     font-family: 'Inter', sans-serif;
@@ -72,8 +39,24 @@ body.journal-app-body {
     from { opacity: 0; }
     to { opacity: 1; }
 }
-.calendar-day { min-height: 7rem; }
+.calendar-day { 
+    min-height: 7rem; 
+    position: relative;
+}
 .calendar-day:hover { background-color: #f0f0f0; }
+
+/* NEW: Style for calendar day background color based on mood */
+.calendar-day-mood-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+    opacity: 0.2;
+    transition: background-color 0.3s;
+}
+
 #entry-title-input {
     border-bottom: 2px solid transparent;
     transition: border-color 0.3s ease-in-out;
@@ -126,20 +109,20 @@ body.journal-app-body {
     font-weight: 600;
 }
 
-/* --- NEW: Animated Gradient Keyframes --- */
+/* --- THEME: Animated Gradient Keyframes --- */
 @keyframes gradient-animation {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
-/* --- Theme Styles --- */
+/* --- THEME: Theme Selector Box Styles --- */
 .theme-option {
     border: 3px solid rgba(255, 255, 255, 0.5);
     transition: all 0.2s ease-in-out;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    background-size: 400% 400%;
-    animation: gradient-animation 15s ease infinite;
+    background-size: 200% 200%; 
+    animation: gradient-animation 10s ease infinite;
 }
 .theme-option:hover {
     transform: translateY(-2px);
@@ -147,26 +130,92 @@ body.journal-app-body {
 }
 .theme-option.active {
     border-color: #ffffff;
-    box-shadow: 0 0 0 4px #3b82f6, 0 8px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 0 0 4px var(--theme-active-ring, #3b82f6), 0 8px 12px rgba(0,0,0,0.15);
     transform: translateY(-2px);
 }
 
-/* --- NEW: Updated Theme Gradients --- */
-.theme-default { background-image: linear-gradient(45deg, #a8b2ff, #c2d2ff, #e0e7ff); }
-.theme-sunset { background-image: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb); }
-.theme-serenity { background-image: linear-gradient(45deg, #84fab0, #8fd3f4, #a1c4fd); }
-.theme-meadow { background-image: linear-gradient(45deg, #c1dfc4, #deecdd, #f6fff8); }
-.theme-dusk { background-image: linear-gradient(45deg, #6b73ff, #a2a7ff, #c8cbff); }
+/* --- THEME: Selector Box Gradients (to preview the theme) --- */
+.theme-option[data-theme="theme-default"] { background-image: linear-gradient(45deg, #a8b2ff, #c2d2ff, #e0e7ff); }
+.theme-option[data-theme="theme-sunset"] { background-image: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb); }
+.theme-option[data-theme="theme-serenity"] { background-image: linear-gradient(45deg, #84fab0, #8fd3f4, #a1c4fd); }
+.theme-option[data-theme="theme-meadow"] { background-image: linear-gradient(45deg, #c1dfc4, #deecdd, #f6fff8); }
+.theme-option[data-theme="theme-dusk"] { background-image: linear-gradient(45deg, #6b73ff, #a2a7ff, #c8cbff); }
+
+
+/* --- THEME: General App Theme Styles --- */
+body {
+    --theme-bg-gradient: linear-gradient(to top right, #eef2ff, #f9fafb);
+    --theme-primary-btn-bg: #1f2937;
+    --theme-primary-btn-hover-bg: #374151;
+    --theme-today-bg: #eef2ff;
+    --theme-today-text: #4338ca;
+    --theme-active-ring: #3b82f6;
+    --theme-streak-icon: #f97316;
+}
 
 body #app-wrapper {
     transition: background-image 0.5s ease-in-out;
+    background-image: var(--theme-bg-gradient);
+}
+#add-entry-btn {
+    background-color: var(--theme-primary-btn-bg);
+}
+#add-entry-btn:hover {
+    background-color: var(--theme-primary-btn-hover-bg);
+}
+.calendar-day.bg-blue-50 {
+    background-color: var(--theme-today-bg) !important;
+}
+.font-semibold.text-blue-600 {
+    color: var(--theme-today-text) !important;
+}
+#streak-icon {
+    color: var(--theme-streak-icon);
 }
 
-body.theme-default #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #eef2ff, #f9fafb); }
-body.theme-sunset #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #fff1f2, #fefce8); }
-body.theme-serenity #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #ecfdf5, #f0f9ff); }
-body.theme-meadow #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #f0fdf4, #f7fee7); }
-body.theme-dusk #app-wrapper { background-color: transparent; background-image: linear-gradient(to top right, #e0e7ff, #f3f4f6); }
+/* --- Theme: Sunset --- */
+body.theme-sunset {
+    --theme-bg-gradient: linear-gradient(to top right, #fff1f2, #fefce8);
+    --theme-primary-btn-bg: #f97316;
+    --theme-primary-btn-hover-bg: #ea580c;
+    --theme-today-bg: #fff7ed;
+    --theme-today-text: #f97316;
+    --theme-active-ring: #f97316;
+    --theme-streak-icon: #f59e0b;
+}
+
+/* --- Theme: Serenity --- */
+body.theme-serenity {
+    --theme-bg-gradient: linear-gradient(to top right, #ecfdf5, #f0f9ff);
+    --theme-primary-btn-bg: #059669;
+    --theme-primary-btn-hover-bg: #047857;
+    --theme-today-bg: #ecfdf5;
+    --theme-today-text: #059669;
+    --theme-active-ring: #059669;
+    --theme-streak-icon: #10b981;
+}
+
+/* --- Theme: Meadow --- */
+body.theme-meadow {
+    --theme-bg-gradient: linear-gradient(to top right, #f0fdf4, #f7fee7);
+    --theme-primary-btn-bg: #65a30d;
+    --theme-primary-btn-hover-bg: #4d7c0f;
+    --theme-today-bg: #f7fee7;
+    --theme-today-text: #65a30d;
+    --theme-active-ring: #65a30d;
+    --theme-streak-icon: #84cc16;
+}
+
+/* --- Theme: Dusk --- */
+body.theme-dusk {
+    --theme-bg-gradient: linear-gradient(to top right, #e0e7ff, #f3f4f6);
+    --theme-primary-btn-bg: #4f46e5;
+    --theme-primary-btn-hover-bg: #4338ca;
+    --theme-today-bg: #eef2ff;
+    --theme-today-text: #4f46e5;
+    --theme-active-ring: #4f46e5;
+    --theme-streak-icon: #6366f1;
+}
 
 /* Custom Font Themes */
 body.theme-serenity, body.theme-meadow, body.theme-dusk {
