@@ -12,48 +12,17 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/style.css">
     
-    <!-- --- TOUR: Added Shepherd.js library and theme --- -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/css/shepherd.css"/>
     <style>
-        /* --- TOUR: Basic styling for the tour popups --- */
-        .shepherd-button {
-            background: #3b82f6;
-            border-radius: 0.5rem;
-            padding: 0.5rem 1.5rem;
-            color: white;
-            transition: background-color 0.2s;
-        }
-        .shepherd-button:not(.shepherd-button-secondary):hover {
-            background: #2563eb;
-        }
-        .shepherd-button.shepherd-button-secondary {
-            background: #e5e7eb;
-            color: #374151;
-        }
-        .shepherd-button.shepherd-button-secondary:hover {
-            background: #d1d5db;
-        }
-        .shepherd-header {
-            background-color: #f3f4f6;
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        .shepherd-title {
-            font-weight: bold;
-            color: #1f2937;
-            font-size: 1.125rem;
-        }
-        .shepherd-text {
-            padding: 1rem;
-            font-size: 0.9rem;
-            color: #4b5563;
-        }
-        .shepherd-cancel-icon {
-            font-size: 1.5rem;
-        }
-        .shepherd-cancel-icon:hover {
-            color: #ef4444;
-        }
+        .shepherd-button { background: #3b82f6; border-radius: 0.5rem; padding: 0.5rem 1.5rem; color: white; transition: background-color 0.2s; }
+        .shepherd-button:not(.shepherd-button-secondary):hover { background: #2563eb; }
+        .shepherd-button.shepherd-button-secondary { background: #e5e7eb; color: #374151; }
+        .shepherd-button.shepherd-button-secondary:hover { background: #d1d5db; }
+        .shepherd-header { background-color: #f3f4f6; padding: 1rem; border-bottom: 1px solid #e5e7eb; }
+        .shepherd-title { font-weight: bold; color: #1f2937; font-size: 1.125rem; }
+        .shepherd-text { padding: 1rem; font-size: 0.9rem; color: #4b5563; }
+        .shepherd-cancel-icon { font-size: 1.5rem; }
+        .shepherd-cancel-icon:hover { color: #ef4444; }
     </style>
 </head>
 <body class="antialiased">
@@ -64,9 +33,15 @@
 
     <div id="app-wrapper" class="hidden flex flex-col md:flex-row h-screen bg-gray-50">
         <nav id="sidebar" class="hidden md:flex w-64 bg-white shadow-md flex-col p-6 rounded-r-xl z-20">
-            <div class="flex items-center mb-10">
-                <img id="sidebar-profile-pic" src="https://placehold.co/40x40/e2e8f0/4a5568?text=ME" class="w-10 h-10 rounded-full mr-3">
-                <h1 class="text-3xl font-bold text-gray-800 font-serif">Journal</h1>
+            <div class="flex items-center justify-between mb-10">
+                <div class="flex items-center">
+                    <img id="sidebar-profile-pic" src="https://placehold.co/40x40/e2e8f0/4a5568?text=ME" class="w-10 h-10 rounded-full mr-3">
+                    <h1 class="text-3xl font-bold text-gray-800 font-serif">Journal</h1>
+                </div>
+                <div id="streak-tracker" class="flex items-center text-orange-500" title="Your daily journaling streak!">
+                    <i id="streak-icon" data-feather="zap" class="w-6 h-6"></i>
+                    <span id="streak-count" class="font-bold text-xl ml-1">0</span>
+                </div>
             </div>
             <ul class="space-y-3">
                 <li><a href="#" class="nav-link active" data-target="calendar-view"><i data-feather="calendar" class="mr-3"></i>Calendar</a></li>
@@ -75,12 +50,17 @@
                 <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3"></i>Breathing</a></li>
                 <li><a href="#" class="nav-link" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
             </ul>
-            <button id="add-entry-btn" class="mt-auto w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center mb-4">
-                <i data-feather="plus" class="mr-2"></i>New Entry
-            </button>
-            <button id="logout-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-300 flex items-center justify-center">
-                <i data-feather="log-out" class="mr-2"></i>Logout
-            </button>
+            <div class="mt-auto space-y-4">
+                <button id="gratitude-btn" class="w-full bg-yellow-400 text-yellow-900 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-yellow-500 flex items-center justify-center">
+                    <i data-feather="gift" class="mr-2"></i>Daily Gratitude
+                </button>
+                <button id="add-entry-btn" class="w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center">
+                    <i data-feather="plus" class="mr-2"></i>New Entry
+                </button>
+                <button id="logout-btn" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-300 flex items-center justify-center">
+                    <i data-feather="log-out" class="mr-2"></i>Logout
+                </button>
+            </div>
         </nav>
 
         <main class="flex-1 p-4 md:p-8 overflow-y-auto relative">
@@ -99,9 +79,9 @@
                         <button id="next-month-btn" class="p-2 hover:bg-gray-200 rounded-full"><i data-feather="chevron-right" class="w-6 h-6"></i></button>
                     </div>
                 </header>
-                <div id="daily-quote-section" class="mb-6 p-4 bg-white rounded-xl shadow text-center">
-                    <p id="daily-quote-text" class="text-lg italic text-gray-600"></p>
-                    <p id="daily-quote-author" class="text-sm text-gray-500 mt-2"></p>
+                <div id="prompt-of-the-day-section" class="mb-6 p-4 bg-white rounded-xl shadow text-center cursor-pointer hover:bg-gray-50" title="Click to start writing about this">
+                    <p class="text-sm font-semibold text-purple-600">PROMPT OF THE DAY</p>
+                    <p id="prompt-of-the-day-text" class="text-lg italic text-gray-700 mt-1">What's something you're looking forward to?</p>
                 </div>
                 <div id="calendar-grid" class="grid grid-cols-7 bg-white rounded-xl shadow"></div>
             </div>
@@ -186,16 +166,37 @@
                         <button type="button" class="format-btn p-2 rounded-md hover:bg-gray-200" data-command="insertOrderedList" title="Numbered List"><i data-feather="hash" class="w-5 h-5"></i></button>
                     </div>
                     <div id="entry-content-editor" contenteditable="true" class="w-full text-gray-700 text-base sm:text-lg leading-relaxed outline-none resize-none min-h-[200px]" placeholder="Start writing your story..."></div>
-                    <div id="ai-prompt-container" class="flex justify-end mt-2 hidden">
-                        <button id="ai-prompt-btn" class="flex items-center gap-2 bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors hover:bg-blue-200">
-                            <i data-feather="sparkles" class="w-5 h-5"></i>
-                            Get AI Prompt
-                        </button>
-                    </div>
-                    <div id="happy-memory-container" class="border-t pt-4 mt-4 flex items-center justify-end hidden">
-                        <div class="flex items-center">
+                    
+                    <!-- FIX: Restructured footer for entry actions -->
+                    <div class="border-t pt-4 mt-4 flex items-center justify-between">
+                        <div id="happy-memory-container" class="flex items-center">
                             <input type="checkbox" id="happy-memory-checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500">
                             <label for="happy-memory-checkbox" class="ml-2 block text-sm font-medium text-gray-700">Add to Happy Memories</label>
+                        </div>
+                        <div id="entry-actions-container">
+                            <!-- AI Prompt button (for edit mode) -->
+                            <button id="ai-prompt-btn" class="flex items-center gap-2 bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors hover:bg-blue-200 hidden">
+                                <i data-feather="edit-3" class="w-5 h-5"></i>
+                                Get AI Prompt
+                            </button>
+                            <!-- Analyze Entry button (for view mode) -->
+                            <button id="analyze-entry-btn" class="flex items-center gap-2 bg-purple-100 text-purple-700 font-semibold py-2 px-4 rounded-lg shadow-sm transition-colors hover:bg-purple-200 hidden">
+                                <i data-feather="sparkles" class="w-5 h-5"></i>
+                                Analyze Entry
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="ai-insights-container" class="bg-white p-6 rounded-xl shadow mt-6 hidden">
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 flex items-center"><i data-feather="cpu" class="mr-2"></i>AI Insights</h3>
+                    <div id="ai-insights-content" class="space-y-4">
+                        <div>
+                            <h4 class="font-semibold text-gray-600">Sentiment</h4>
+                            <p id="ai-sentiment" class="text-gray-800"></p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-600">Summary</h4>
+                            <p id="ai-summary" class="text-gray-800 leading-relaxed"></p>
                         </div>
                     </div>
                 </div>
@@ -220,10 +221,8 @@
                     <div class="bg-white p-6 rounded-xl shadow">
                         <h3 class="font-bold text-lg mb-4">App Theme</h3>
                         <div id="theme-selector" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                            <!-- Existing Themes -->
                             <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-default">Default</div>
                             <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-sunset">Sunset</div>
-                            <!-- New Themes -->
                             <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-serenity">Serenity</div>
                             <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-meadow">Meadow</div>
                             <div class="theme-option rounded-lg h-24 cursor-pointer flex items-center justify-center text-white font-bold text-lg" data-theme="theme-dusk">Dusk</div>
@@ -248,8 +247,11 @@
             <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3"></i>Breathing</a></li>
             <li><a href="#" class="nav-link" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a></li>
         </ul>
-        <button id="add-entry-btn-mobile" class="mt-auto w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center mb-4"><i data-feather="plus" class="mr-2"></i>New Entry</button>
-        <button id="logout-btn-mobile" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-300 flex items-center justify-center"><i data-feather="log-out" class="mr-2"></i>Logout</button>
+        <div class="mt-auto space-y-4">
+            <button id="gratitude-btn-mobile" class="w-full bg-yellow-400 text-yellow-900 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-yellow-500 flex items-center justify-center"><i data-feather="gift" class="mr-2"></i>Daily Gratitude</button>
+            <button id="add-entry-btn-mobile" class="w-full bg-gray-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-700 flex items-center justify-center"><i data-feather="plus" class="mr-2"></i>New Entry</button>
+            <button id="logout-btn-mobile" class="w-full bg-gray-200 text-gray-700 font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-gray-300 flex items-center justify-center"><i data-feather="log-out" class="mr-2"></i>Logout</button>
+        </div>
     </div>
     <div id="mood-modal" class="mood-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
         <div class="bg-white p-8 rounded-2xl shadow-2xl text-center transform scale-95 transition-transform">
@@ -263,6 +265,22 @@
             </div>
         </div>
     </div>
+    <div id="gratitude-modal" class="custom-alert-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-lg w-full">
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">What are you grateful for today?</h3>
+            <p class="text-gray-600 mb-6">List three things, big or small.</p>
+            <div class="space-y-4 text-left">
+                <input type="text" id="gratitude-1" class="w-full p-3 border border-gray-300 rounded-md" placeholder="1.">
+                <input type="text" id="gratitude-2" class="w-full p-3 border border-gray-300 rounded-md" placeholder="2.">
+                <input type="text" id="gratitude-3" class="w-full p-3 border border-gray-300 rounded-md" placeholder="3.">
+            </div>
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="gratitude-cancel-btn" class="bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-400 transition-colors">Cancel</button>
+                <button id="gratitude-save-btn" class="bg-yellow-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
     <div id="custom-alert-modal" class="custom-alert-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
         <div class="bg-white p-8 rounded-2xl shadow-2xl text-center max-w-sm w-full">
             <h3 id="custom-alert-title" class="text-xl font-bold text-gray-800 mb-4"></h3>
@@ -275,7 +293,6 @@
         </div>
     </div>
 
-    <!-- --- TOUR: Added the new tour.js script and Shepherd.js library script --- -->
     <script src="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/js/shepherd.min.js"></script>
     <script type="module" src="js/main.js"></script>
     <script type="module" src="js/tour.js"></script>
