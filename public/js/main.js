@@ -21,6 +21,7 @@ let app, db, auth, userId, canvasAppId;
 let resolveCustomPrompt;
 let currentCalendarDate = new Date();
 let editingMemoryId = null; 
+let currentEditingDate = null; // To track the date for a new entry
 let breathingDuration = 0;
 let breathingInterval, countdownInterval;
 let journalEntries = [], moods = {};
@@ -136,6 +137,10 @@ document.addEventListener('DOMContentLoaded', () => {
         aiSummary: document.getElementById('ai-summary'),
         analyzePatternsBtn: document.getElementById('analyze-patterns-btn'),
         patternsResultContainer: document.getElementById('patterns-result-container'),
+        entrySelectionModal: document.getElementById('entry-selection-modal'),
+        entrySelectionTitle: document.getElementById('entry-selection-title'),
+        entrySelectionList: document.getElementById('entry-selection-list'),
+        entrySelectionCancelBtn: document.getElementById('entry-selection-cancel-btn'),
     };
 
     // --- State and Data ---
@@ -254,7 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const openEntryForEditing = (entry = null, isEditable = true, dateStr = null, initialContent = '') => {
         const isNew = entry === null;
-        editingMemoryId = isNew ? (dateStr || getLocalDateString(new Date())) : entry.id;
+        editingMemoryId = isNew ? null : entry.id; // Use null for new entries
+        currentEditingDate = dateStr; // Always set the date for context
         
         dom.entryTitleInput.value = isNew ? '' : entry.title;
         dom.entryContentEditor.innerHTML = isNew ? initialContent : entry.text;
@@ -301,35 +307,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="calendar-day-mood-bg"></div>
             `;
     
-            const memoryForDay = journalEntries.find(m => m.id === dateStr);
+            const entriesForDay = journalEntries.filter(m => m.date === dateStr);
             if (moods[dateStr]) {
                 dayDiv.innerHTML += `<div class="text-2xl text-center">${moods[dateStr]}</div>`;
                 const moodColor = moodMap[moods[dateStr]]?.color || 'transparent';
                 dayDiv.querySelector('.calendar-day-mood-bg').style.backgroundColor = moodColor;
             }
-            if (memoryForDay) dayDiv.innerHTML += `<div class="w-2 h-2 rounded-full mx-auto mt-1 bg-blue-500"></div>`;
+            if (entriesForDay.length > 0) {
+                dayDiv.innerHTML += `<div class="w-2 h-2 rounded-full mx-auto mt-1 bg-blue-500"></div>`;
+            }
             
-            dayDiv.addEventListener('click', () => {
-                if (currentDate > today) {
-                    showCustomAlert("You cannot create or view entries for a future date.", "Future Date");
-                    return;
-                }
-    
-                const isTodayFlag = getLocalDateString(currentDate) === getLocalDateString(new Date());
-    
-                if (isTodayFlag) {
-                    openEntryForEditing(memoryForDay, true, dateStr);
-                } else {
-                    if (memoryForDay) {
-                        openEntryForEditing(memoryForDay, false, dateStr);
-                    } else {
-                        showCustomAlert("There is no journal entry for this date.", "No Entry");
-                    }
-                }
-            });
+            dayDiv.addEventListener('click', () => handleCalendarDayClick(currentDate, dateStr, entriesForDay));
     
             dom.calendarGrid.appendChild(dayDiv);
         }
+    };
+
+    const handleCalendarDayClick = (currentDate, dateStr, entriesForDay) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (currentDate > today) {
+            showCustomAlert("You cannot create or view entries for a future date.", "Future Date");
+            return;
+        }
+
+        const isTodayFlag = dateStr === getLocalDateString(new Date());
+
+        if (entriesForDay.length === 0) {
+            if (isTodayFlag) {
+                openEntryForEditing(null, true, dateStr);
+            } else {
+                showCustomAlert("There is no journal entry for this date.", "No Entry");
+            }
+        } else if (entriesForDay.length === 1) {
+            openEntryForEditing(entriesForDay[0], isTodayFlag, dateStr);
+        } else {
+            showEntrySelectionModal(entriesForDay, isTodayFlag);
+        }
+    };
+
+    const showEntrySelectionModal = (entries, isEditable) => {
+        dom.entrySelectionList.innerHTML = '';
+        dom.entrySelectionTitle.textContent = `Entries for ${new Date(entries[0].date).toLocaleDateString()}`;
+
+        entries.forEach(entry => {
+            const button = document.createElement('button');
+            button.className = 'w-full text-left p-3 bg-gray-100 rounded-lg hover:bg-gray-200';
+            button.textContent = entry.title;
+            button.onclick = () => {
+                dom.entrySelectionModal.classList.remove('active');
+                openEntryForEditing(entry, isEditable, entry.date);
+            };
+            dom.entrySelectionList.appendChild(button);
+        });
+
+        dom.entrySelectionModal.classList.add('active');
     };
 
     const renderMemories = () => {
@@ -339,16 +372,16 @@ document.addEventListener('DOMContentLoaded', () => {
             dom.memoriesList.innerHTML = `<p class="text-gray-500 col-span-full">You haven't saved any happy memories yet. Check the "Add to Happy Memories" box when writing an entry!</p>`;
             return;
         }
-        happyMemories.sort((a, b) => new Date(b.id) - new Date(a.id));
+        happyMemories.sort((a, b) => b.timestamp - a.timestamp);
         happyMemories.forEach(entry => {
             const card = document.createElement('div');
             card.className = 'bg-white rounded-xl shadow p-4 cursor-pointer transition-transform hover:scale-105';
             card.innerHTML = `
                 <img src="${entry.image || 'https://placehold.co/400x200/e2e8f0/4a5568?text=No+Image'}" class="w-full h-32 object-cover rounded-lg mb-4" onerror="this.onerror=null;this.src='https://placehold.co/400x200/e2e8f0/4a5568?text=No+Image';">
                 <h3 class="font-bold text-lg text-gray-800">${entry.title}</h3>
-                <p class="text-sm text-gray-500">${new Date(entry.id).toLocaleDateString()}</p>
+                <p class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</p>
             `;
-            card.addEventListener('click', () => openEntryForEditing(entry, false));
+            card.addEventListener('click', () => openEntryForEditing(entry, false, entry.date));
             dom.memoriesList.appendChild(card);
         });
     };
@@ -707,8 +740,8 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.nextMonthBtn.addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1); renderCalendar(currentCalendarDate); });
         
         dom.saveBtn.addEventListener('click', async () => {
-            if (!editingMemoryId) {
-                showCustomAlert('Could not determine the date for this entry. Please go back and try again.', 'Save Error');
+            if (!currentEditingDate) {
+                showCustomAlert('Could not determine the date for this entry.', 'Save Error');
                 return;
             }
             if (!dom.entryTitleInput.value.trim()) {
@@ -739,13 +772,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 text: dom.entryContentEditor.innerHTML,
                 image: imageUrl,
                 isHappy: dom.happyMemoryCheckbox.checked,
-                date: editingMemoryId,
+                date: currentEditingDate,
                 timestamp: serverTimestamp()
             };
 
             try {
-                const docRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/journalEntries`, editingMemoryId);
-                await setDoc(docRef, entryData, { merge: true });
+                if (editingMemoryId) {
+                    // Editing an existing entry
+                    const docRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/journalEntries`, editingMemoryId);
+                    await setDoc(docRef, entryData, { merge: true });
+                } else {
+                    // Creating a new entry
+                    const collectionRef = collection(db, `artifacts/${canvasAppId}/users/${userId}/journalEntries`);
+                    await addDoc(collectionRef, entryData);
+                }
                 
                 const settingsRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/settings`, 'userProfile');
                 const settingsDoc = await getDoc(settingsRef);
@@ -823,7 +863,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         dom.navLinks.forEach(link => link.addEventListener('click', (e) => { e.preventDefault(); showView(link.dataset.target); }));
-        dom.addEntryBtn.addEventListener('click', () => openEntryForEditing(null, true, getLocalDateString(new Date())));
+        
+        dom.addEntryBtn.addEventListener('click', () => {
+            const todayStr = getLocalDateString(new Date());
+            const entriesToday = journalEntries.filter(e => e.date === todayStr);
+            if (entriesToday.length >= 3) {
+                showCustomAlert("You have reached the maximum of 3 entries for today.", "Entry Limit Reached");
+            } else {
+                openEntryForEditing(null, true, todayStr);
+            }
+        });
+
         dom.moodEmojis.forEach(emoji => emoji.addEventListener('click', async () => {
             const todayStr = getLocalDateString(new Date());
             try {
@@ -896,6 +946,9 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.aiPromptBtn.addEventListener('click', getAIPromptForEditor);
         dom.analyzeEntryBtn.addEventListener('click', analyzeEntry);
         dom.analyzePatternsBtn.addEventListener('click', recognizePatterns);
+        dom.entrySelectionCancelBtn.addEventListener('click', () => {
+            dom.entrySelectionModal.classList.remove('active');
+        });
 
         dom.profilePicUpload.addEventListener('change', async (event) => {
             const file = event.target.files[0];
