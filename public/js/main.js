@@ -16,17 +16,21 @@ const firebaseConfig = {
     appId: "1:641145830046:web:b6c1c06d8a7f5e062ed98f"
 };
 
-// Global Variables
+// --- Global Variables (Merged) ---
 let app, db, auth, userId, canvasAppId;
 let resolveCustomPrompt;
 let currentCalendarDate = new Date();
 let editingMemoryId = null; 
-let currentEditingDate = null; // To track the date for a new entry
+let currentEditingDate = null;
 let breathingDuration = 0;
 let breathingInterval, countdownInterval;
 let journalEntries = [], moods = {};
 let moodChartInstance = null;
 const THEME_CLASSES = ['theme-default', 'theme-sunset', 'theme-serenity', 'theme-meadow', 'theme-dusk'];
+// NEW: State variables for the happy memories diary
+let happyMemories = [];
+let currentMemoryIndex = 0;
+
 
 // --- Custom Alert ---
 const showCustomAlert = (message, title = 'Notification', isPrompt = false, defaultValue = '', showCancel = false) => {
@@ -70,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('loading-view').innerHTML = `<p class="text-red-500">Error: Could not initialize the application. Please check the console.</p>`;
     }
     
-    // --- DOM Element Cache ---
+    // --- DOM Element Cache (Fully Merged) ---
     const dom = {
         views: document.querySelectorAll('.view'),
         navLinks: document.querySelectorAll('.nav-link'),
@@ -80,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
         monthYearHeader: document.getElementById('month-year-header'),
         prevMonthBtn: document.getElementById('prev-month-btn'),
         nextMonthBtn: document.getElementById('next-month-btn'),
-        memoriesList: document.getElementById('memories-list'),
         entryTitleInput: document.getElementById('entry-title-input'),
         entryContentEditor: document.getElementById('entry-content-editor'),
         entryImageUpload: document.getElementById('entry-image-upload'),
@@ -141,6 +144,15 @@ document.addEventListener('DOMContentLoaded', () => {
         entrySelectionTitle: document.getElementById('entry-selection-title'),
         entrySelectionList: document.getElementById('entry-selection-list'),
         entrySelectionCancelBtn: document.getElementById('entry-selection-cancel-btn'),
+        
+        // NEW: Diary-specific elements
+        diaryContainer: document.querySelector('.diary-container'),
+        diaryNavigation: document.querySelector('.diary-navigation'),
+        diaryPagesContainer: document.getElementById('diary-pages-container'),
+        diaryPrevBtn: document.getElementById('diary-prev-btn'),
+        diaryNextBtn: document.getElementById('diary-next-btn'),
+        diaryPageCounter: document.getElementById('diary-page-counter'),
+        noMemoriesMessage: document.getElementById('no-memories-message'),
     };
 
     // --- State and Data ---
@@ -151,14 +163,25 @@ document.addEventListener('DOMContentLoaded', () => {
         '🧘': { score: 5, color: '#FFC107'} 
     };
     
-    // --- Main App Initialization ---
+    // --- Main App Initialization (MERGED) ---
     function initializeJournalApp() {
         if (!userId) return;
         
         const journalEntriesRef = collection(db, `artifacts/${canvasAppId}/users/${userId}/journalEntries`);
         onSnapshot(journalEntriesRef, (snapshot) => {
             journalEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            renderMemories();
+            
+            // NEW: Filter for happy memories and sort them by date
+            happyMemories = journalEntries
+                .filter(entry => entry.isHappy)
+                .sort((a, b) => (a.timestamp?.toDate() || 0) - (b.timestamp?.toDate() || 0));
+            
+            // NEW: If the memories view is active, render the new diary
+            if (document.getElementById('memories-view').classList.contains('active')) {
+                renderHappyMemoriesDiary();
+            }
+            
+            // Always render the calendar
             renderCalendar(currentCalendarDate);
         });
         
@@ -205,21 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Helper & Core Functions ---
     const getLocalDateString = (date) => new Date(date.getTime() - (date.getTimezoneOffset() * 60000)).toISOString().split("T")[0];
 
-    const resetBreathingSession = () => {
-        clearInterval(breathingInterval);
-        clearInterval(countdownInterval);
-        breathingDuration = 0;
-        dom.breathingSetup.style.display = 'block';
-        dom.breathingSession.style.display = 'none';
-        dom.breathingFeedback.style.display = 'none';
-        dom.breathingCircle.classList.remove('breathe-in', 'breathe-out');
-        dom.breathingInstruction.textContent = '';
-        dom.breathingTimer.textContent = '';
-        dom.durationBtns.forEach(b => b.classList.remove('selected-duration-btn'));
-        dom.customDurationBtn.textContent = "Custom";
-        dom.startBreathingBtn.disabled = true;
-    };
-    
+    // --- showView (MERGED) ---
     const showView = (viewId) => {
         const currentActiveView = document.querySelector('.view.active');
         if (currentActiveView && currentActiveView.id === 'breathing-view' && viewId !== 'breathing-view') {
@@ -236,42 +245,102 @@ document.addEventListener('DOMContentLoaded', () => {
         closeMobileSidebar();
         if (viewId === 'mood-tracker-view') {
             renderMoodTracker();
-            dom.patternsResultContainer.innerHTML = '';
-            dom.analyzePatternsBtn.disabled = false;
+            if(dom.patternsResultContainer) dom.patternsResultContainer.innerHTML = '';
+            if(dom.analyzePatternsBtn) dom.analyzePatternsBtn.disabled = false;
+        }
+        // NEW: Call the new diary rendering function when switching to its view
+        if (viewId === 'memories-view') {
+            renderHappyMemoriesDiary();
         }
     };
 
+    // --- REPLACES the old renderMemories function ---
+    const renderHappyMemoriesDiary = () => {
+        if (!dom.diaryPagesContainer) return;
+
+        dom.diaryPagesContainer.innerHTML = '';
+        const hasMemories = happyMemories.length > 0;
+
+        dom.diaryContainer.classList.toggle('hidden', !hasMemories);
+        dom.diaryNavigation.classList.toggle('hidden', !hasMemories);
+        dom.noMemoriesMessage.classList.toggle('hidden', hasMemories);
+
+        if (!hasMemories) return;
+
+        happyMemories.forEach((entry, index) => {
+            const page = document.createElement('div');
+            page.className = 'diary-page';
+            page.dataset.index = index;
+            const formattedDate = entry.date ? new Date(entry.date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'Someday';
+            page.innerHTML = `
+                <div class="diary-left">
+                    <img src="${entry.image || 'https://placehold.co/600x400/e2e8f0/4a5568?text=No+Image'}" class="diary-image" alt="Memory Image" onerror="this.onerror=null;this.src='https://placehold.co/600x400/e2e8f0/4a5568?text=Image+Error';">
+                    <p class="diary-date">${formattedDate}</p>
+                </div>
+                <div class="diary-right">
+                    <h3>${entry.title || 'Untitled Memory'}</h3>
+                    <div>${entry.text || ''}</div>
+                </div>
+            `;
+            dom.diaryPagesContainer.appendChild(page);
+        });
+
+        currentMemoryIndex = 0;
+        updateDiaryDisplay();
+    };
+    
+    // --- NEW: Helper function to control diary page visibility ---
+    const updateDiaryDisplay = () => {
+        if (happyMemories.length === 0) return;
+        document.querySelectorAll('.diary-page').forEach(page => page.classList.remove('active'));
+        const currentPageElement = document.querySelector(`.diary-page[data-index='${currentMemoryIndex}']`);
+        if (currentPageElement) currentPageElement.classList.add('active');
+        dom.diaryPageCounter.textContent = `${currentMemoryIndex + 1} / ${happyMemories.length}`;
+        dom.diaryPrevBtn.disabled = currentMemoryIndex === 0;
+        dom.diaryNextBtn.disabled = currentMemoryIndex >= happyMemories.length - 1;
+        feather.replace();
+    };
+    
+    const resetBreathingSession = () => {
+        clearInterval(breathingInterval);
+        clearInterval(countdownInterval);
+        breathingDuration = 0;
+        dom.breathingSetup.style.display = 'block';
+        dom.breathingSession.style.display = 'none';
+        dom.breathingFeedback.style.display = 'none';
+        dom.breathingCircle.classList.remove('breathe-in', 'breathe-out');
+        dom.breathingInstruction.textContent = '';
+        dom.breathingTimer.textContent = '';
+        dom.durationBtns.forEach(b => b.classList.remove('selected-duration-btn'));
+        dom.customDurationBtn.textContent = "Custom";
+        dom.startBreathingBtn.disabled = true;
+    };
+    
     const setEntryViewState = (isEditable, isNew) => {
         dom.entryTitleInput.readOnly = !isEditable;
         dom.entryContentEditor.contentEditable = isEditable;
-        
         dom.saveBtn.classList.toggle('hidden', !isEditable);
         dom.deleteBtn.classList.toggle('hidden', !isEditable || isNew);
         dom.toolbar.classList.toggle('hidden', !isEditable);
         dom.happyMemoryContainer.classList.toggle('hidden', !isEditable);
         dom.entryImageLabel.style.pointerEvents = isEditable ? 'auto' : 'none';
-        
         dom.aiPromptBtn.classList.toggle('hidden', !isEditable);
         dom.analyzeEntryBtn.classList.toggle('hidden', isEditable || isNew);
-
         dom.backBtn.classList.remove('hidden'); 
     };
     
     const openEntryForEditing = (entry = null, isEditable = true, dateStr = null, initialContent = '') => {
         const isNew = entry === null;
-        editingMemoryId = isNew ? null : entry.id; // Use null for new entries
-        currentEditingDate = dateStr; // Always set the date for context
-        
+        editingMemoryId = isNew ? null : entry.id;
+        currentEditingDate = dateStr;
         dom.entryTitleInput.value = isNew ? '' : entry.title;
         dom.entryContentEditor.innerHTML = isNew ? initialContent : entry.text;
         dom.happyMemoryCheckbox.checked = isNew ? false : entry.isHappy;
         dom.entryImagePreview.src = entry?.image || 'https://placehold.co/800x400/e2e8f0/4a5568?text=Click+to+upload+image';
         dom.entryImageUpload.value = '';
-
         dom.aiInsightsContainer.classList.add('hidden');
         dom.aiSentiment.textContent = '';
         dom.aiSummary.textContent = '';
-        
         setEntryViewState(isEditable, isNew);
         showView('entry-view');
     };
@@ -365,27 +434,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.entrySelectionModal.classList.add('active');
     };
 
-    const renderMemories = () => {
-        dom.memoriesList.innerHTML = '';
-        const happyMemories = journalEntries.filter(entry => entry.isHappy);
-        if (happyMemories.length === 0) {
-            dom.memoriesList.innerHTML = `<p class="text-gray-500 col-span-full">You haven't saved any happy memories yet. Check the "Add to Happy Memories" box when writing an entry!</p>`;
-            return;
-        }
-        happyMemories.sort((a, b) => b.timestamp - a.timestamp);
-        happyMemories.forEach(entry => {
-            const card = document.createElement('div');
-            card.className = 'bg-white rounded-xl shadow p-4 cursor-pointer transition-transform hover:scale-105';
-            card.innerHTML = `
-                <img src="${entry.image || 'https://placehold.co/400x200/e2e8f0/4a5568?text=No+Image'}" class="w-full h-32 object-cover rounded-lg mb-4" onerror="this.onerror=null;this.src='https://placehold.co/400x200/e2e8f0/4a5568?text=No+Image';">
-                <h3 class="font-bold text-lg text-gray-800">${entry.title}</h3>
-                <p class="text-sm text-gray-500">${new Date(entry.date).toLocaleDateString()}</p>
-            `;
-            card.addEventListener('click', () => openEntryForEditing(entry, false, entry.date));
-            dom.memoriesList.appendChild(card);
-        });
-    };
-    
     const renderMoodTracker = () => {
         if (moodChartInstance) {
             moodChartInstance.destroy();
@@ -408,8 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return d.toLocaleDateString('en-US', { weekday: 'short' });
         });
 
-        let weeklyHigh = '...';
-        let weeklyLow = '...';
         const weekMoods = last7Days.map(d => moods[d]).filter(Boolean);
         if (weekMoods.length > 0) {
             let highScore = -1, lowScore = 6;
@@ -734,6 +780,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Event Listeners Setup (MERGED & COMPLETE) ---
     function setupEventListeners() {
         dom.logoutBtn.addEventListener('click', () => signOut(auth));
         dom.prevMonthBtn.addEventListener('click', () => { currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1); renderCalendar(currentCalendarDate); });
@@ -885,15 +932,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 showCustomAlert("Could not save your mood.", "Error");
             }
         }));
+
         dom.customAlertOkBtn.addEventListener('click', () => {
             const isPrompt = !document.getElementById('custom-alert-input').classList.contains('hidden');
             resolveCustomPrompt(isPrompt ? document.getElementById('custom-alert-input').value : true);
             document.getElementById('custom-alert-modal').classList.remove('active');
         });
+
         dom.customAlertCancelBtn.addEventListener('click', () => {
             resolveCustomPrompt(null);
             document.getElementById('custom-alert-modal').classList.remove('active');
         });
+
         dom.mobileMenuBtn.addEventListener('click', openMobileSidebar);
         dom.closeMobileMenuBtn.addEventListener('click', closeMobileSidebar);
         dom.mobileSidebarOverlay.addEventListener('click', closeMobileSidebar);
@@ -906,7 +956,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const promptText = dom.promptOfTheDayText.textContent;
             openEntryForEditing(null, true, getLocalDateString(new Date()), `<p><em>${promptText}</em></p><p><br></p>`);
         });
-
+        
         const openGratitudeModal = () => dom.gratitudeModal.classList.add('active');
         const closeGratitudeModal = () => dom.gratitudeModal.classList.remove('active');
 
@@ -946,9 +996,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.aiPromptBtn.addEventListener('click', getAIPromptForEditor);
         dom.analyzeEntryBtn.addEventListener('click', analyzeEntry);
         dom.analyzePatternsBtn.addEventListener('click', recognizePatterns);
-        dom.entrySelectionCancelBtn.addEventListener('click', () => {
-            dom.entrySelectionModal.classList.remove('active');
-        });
+        dom.entrySelectionCancelBtn.addEventListener('click', () => dom.entrySelectionModal.classList.remove('active'));
 
         dom.profilePicUpload.addEventListener('change', async (event) => {
             const file = event.target.files[0];
@@ -967,5 +1015,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 saveSetting({ theme: theme });
             });
         });
+
+        // NEW: Diary navigation event listeners
+        if(dom.diaryPrevBtn) {
+            dom.diaryPrevBtn.addEventListener('click', () => {
+                if (currentMemoryIndex > 0) {
+                    currentMemoryIndex--;
+                    updateDiaryDisplay();
+                }
+            });
+        }
+        if(dom.diaryNextBtn) {
+            dom.diaryNextBtn.addEventListener('click', () => {
+                if (currentMemoryIndex < happyMemories.length - 1) {
+                    currentMemoryIndex++;
+                    updateDiaryDisplay();
+                }
+            });
+        }
     }
 });
