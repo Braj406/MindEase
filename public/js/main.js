@@ -114,22 +114,35 @@ document.addEventListener('DOMContentLoaded', () => {
         closeMobileMenuBtn: document.getElementById('close-mobile-menu-btn'),
         addEntryBtnMobile: document.getElementById('add-entry-btn-mobile'),
         logoutBtnMobile: document.getElementById('logout-btn-mobile'),
-        aiPromptBtn: document.getElementById('ai-prompt-btn'),
-        dailyQuoteText: document.getElementById('daily-quote-text'),
-        dailyQuoteAuthor: document.getElementById('daily-quote-author'),
         toolbar: document.getElementById('toolbar'),
-        aiPromptContainer: document.getElementById('ai-prompt-container'),
         happyMemoryContainer: document.getElementById('happy-memory-container'),
-        // Settings elements
-        sidebarProfilePic: document.getElementById('sidebar-profile-pic'),
         settingsProfilePic: document.getElementById('settings-profile-pic'),
+        sidebarProfilePic: document.getElementById('sidebar-profile-pic'),
         profilePicUpload: document.getElementById('profile-pic-upload'),
         themeSelector: document.getElementById('theme-selector'),
         themeOptions: document.querySelectorAll('.theme-option'),
+        streakCount: document.getElementById('streak-count'),
+        promptOfTheDaySection: document.getElementById('prompt-of-the-day-section'),
+        promptOfTheDayText: document.getElementById('prompt-of-the-day-text'),
+        gratitudeBtn: document.getElementById('gratitude-btn'),
+        gratitudeBtnMobile: document.getElementById('gratitude-btn-mobile'),
+        gratitudeModal: document.getElementById('gratitude-modal'),
+        gratitudeSaveBtn: document.getElementById('gratitude-save-btn'),
+        gratitudeCancelBtn: document.getElementById('gratitude-cancel-btn'),
+        aiPromptBtn: document.getElementById('ai-prompt-btn'),
+        analyzeEntryBtn: document.getElementById('analyze-entry-btn'),
+        aiInsightsContainer: document.getElementById('ai-insights-container'),
+        aiSentiment: document.getElementById('ai-sentiment'),
+        aiSummary: document.getElementById('ai-summary'),
     };
 
     // --- State and Data ---
-    const moodMap = { '😍': { score: 5, color: '#FFC107' }, '😊': { score: 4, color: '#4CAF50' }, '😴': { score: 3, color: '#9E9E9E' }, '😢': { score: 2, color: '#2196F3' }, '😠': { score: 1, color: '#F44336' }, '😌': { score: 4, color: '#4CAF50'}, '🧘': { score: 5, color: '#FFC107'} };
+    const moodMap = { 
+        '😍': { score: 5, color: '#FFC107' }, '😊': { score: 4, color: '#4CAF50' }, 
+        '😴': { score: 3, color: '#9E9E9E' }, '😢': { score: 2, color: '#2196F3' }, 
+        '😠': { score: 1, color: '#F44336' }, '😌': { score: 4, color: '#4CAF50'}, 
+        '🧘': { score: 5, color: '#FFC107'} 
+    };
     
     // --- Main App Initialization ---
     function initializeJournalApp() {
@@ -152,7 +165,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // --- TOUR: Updated logic to check Firestore for tour completion ---
         const settingsRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/settings`, 'userProfile');
         onSnapshot(settingsRef, (doc) => {
             let settings = {};
@@ -160,27 +172,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (doc.exists()) {
                 settings = doc.data();
-                // Start tour only if the tourCompleted flag is NOT true.
                 if (settings.tourCompleted !== true) {
                     shouldStartTour = true;
                 }
             } else {
-                // This is a brand new user with no settings document yet.
-                settings = { theme: 'theme-default' }; // Apply default theme
-                shouldStartTour = true; // A new user should always get the tour.
+                settings = { theme: 'theme-default', streak: 0, lastEntryDate: null }; 
+                shouldStartTour = true; 
             }
 
             applySettings(settings);
+            updateStreak(settings);
 
             if (shouldStartTour) {
-                // We use a small timeout to ensure the DOM is fully painted before starting the tour.
-                // Pass the necessary Firebase details to the tour function.
                 setTimeout(() => startAppTour(db, userId, canvasAppId), 500);
             }
         });
 
         feather.replace();
-        setDailyQuote();
+        setDailyPrompt();
         promptForMood();
         setupEventListeners();
         showView('calendar-view');
@@ -193,15 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
         clearInterval(breathingInterval);
         clearInterval(countdownInterval);
         breathingDuration = 0;
-
         dom.breathingSetup.style.display = 'block';
         dom.breathingSession.style.display = 'none';
         dom.breathingFeedback.style.display = 'none';
-    
         dom.breathingCircle.classList.remove('breathe-in', 'breathe-out');
         dom.breathingInstruction.textContent = '';
         dom.breathingTimer.textContent = '';
-
         dom.durationBtns.forEach(b => b.classList.remove('selected-duration-btn'));
         dom.customDurationBtn.textContent = "Custom";
         dom.startBreathingBtn.disabled = true;
@@ -212,7 +218,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentActiveView && currentActiveView.id === 'breathing-view' && viewId !== 'breathing-view') {
             resetBreathingSession();
         }
-
         dom.views.forEach(view => view.classList.remove('active'));
         const targetView = document.getElementById(viewId);
         if (targetView) targetView.classList.add('active');
@@ -232,25 +237,30 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.saveBtn.classList.toggle('hidden', !isEditable);
         dom.deleteBtn.classList.toggle('hidden', !isEditable || isNew);
         dom.toolbar.classList.toggle('hidden', !isEditable);
-        dom.aiPromptContainer.classList.toggle('hidden', !isEditable);
         dom.happyMemoryContainer.classList.toggle('hidden', !isEditable);
         dom.entryImageLabel.style.pointerEvents = isEditable ? 'auto' : 'none';
         
+        dom.aiPromptBtn.classList.toggle('hidden', !isEditable);
+        dom.analyzeEntryBtn.classList.toggle('hidden', isEditable || isNew);
+
         dom.backBtn.classList.remove('hidden'); 
     };
     
-    const openEntryForEditing = (entry = null, isEditable = true, dateStr = null) => {
+    const openEntryForEditing = (entry = null, isEditable = true, dateStr = null, initialContent = '') => {
         const isNew = entry === null;
         editingMemoryId = isNew ? (dateStr || getLocalDateString(new Date())) : entry.id;
         
         dom.entryTitleInput.value = isNew ? '' : entry.title;
-        dom.entryContentEditor.innerHTML = isNew ? '' : entry.text;
+        dom.entryContentEditor.innerHTML = isNew ? initialContent : entry.text;
         dom.happyMemoryCheckbox.checked = isNew ? false : entry.isHappy;
         dom.entryImagePreview.src = entry?.image || 'https://placehold.co/800x400/e2e8f0/4a5568?text=Click+to+upload+image';
         dom.entryImageUpload.value = '';
+
+        dom.aiInsightsContainer.classList.add('hidden');
+        dom.aiSentiment.textContent = '';
+        dom.aiSummary.textContent = '';
         
         setEntryViewState(isEditable, isNew);
-        
         showView('entry-view');
     };
 
@@ -266,38 +276,56 @@ document.addEventListener('DOMContentLoaded', () => {
         const firstDay = new Date(year, month, 1).getDay();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const today = new Date();
-        today.setHours(0,0,0,0);
-
+        today.setHours(0, 0, 0, 0);
+    
         for (let i = 0; i < firstDay; i++) dom.calendarGrid.innerHTML += `<div class="border-r border-b"></div>`;
         
         for (let i = 1; i <= daysInMonth; i++) {
             const dayDiv = document.createElement('div');
             const currentDate = new Date(year, month, i);
-            currentDate.setHours(0,0,0,0);
+            currentDate.setHours(0, 0, 0, 0);
             const dateStr = getLocalDateString(currentDate);
             const isToday = currentDate.getTime() === today.getTime();
             
             dayDiv.className = `p-2 border-r border-b calendar-day transition-colors cursor-pointer hover:bg-gray-100`;
             if (isToday) dayDiv.classList.add('bg-blue-50');
             
-            dayDiv.innerHTML = `<div class="font-semibold mb-1 ${isToday ? 'text-blue-600' : ''}">${i}</div>`;
+            dayDiv.innerHTML = `
+                <div class="font-semibold mb-1 ${isToday ? 'text-blue-600' : ''}">${i}</div>
+                <div class="calendar-day-mood-bg"></div>
+            `;
+    
             const memoryForDay = journalEntries.find(m => m.id === dateStr);
-            if (moods[dateStr]) dayDiv.innerHTML += `<div class="text-2xl text-center">${moods[dateStr]}</div>`;
+            if (moods[dateStr]) {
+                dayDiv.innerHTML += `<div class="text-2xl text-center">${moods[dateStr]}</div>`;
+                const moodColor = moodMap[moods[dateStr]]?.color || 'transparent';
+                dayDiv.querySelector('.calendar-day-mood-bg').style.backgroundColor = moodColor;
+            }
             if (memoryForDay) dayDiv.innerHTML += `<div class="w-2 h-2 rounded-full mx-auto mt-1 bg-blue-500"></div>`;
             
+            // FIX: Corrected click handling logic for calendar days
             dayDiv.addEventListener('click', () => {
                 if (currentDate > today) {
                     showCustomAlert("You cannot create or view entries for a future date.", "Future Date");
-                } else if (isToday) {
+                    return;
+                }
+    
+                const isTodayFlag = getLocalDateString(currentDate) === getLocalDateString(new Date());
+    
+                if (isTodayFlag) {
+                    // For today, it's always editable, whether an entry exists or not.
                     openEntryForEditing(memoryForDay, true, dateStr);
                 } else {
+                    // For past dates, only open if an entry actually exists.
                     if (memoryForDay) {
-                        openEntryForEditing(memoryForDay, false);
+                        openEntryForEditing(memoryForDay, false, dateStr);
                     } else {
-                        showCustomAlert("No journal entry for this date.", "Past Entry");
+                        // If no entry, just show a message and do nothing else.
+                        showCustomAlert("There is no journal entry for this date.", "No Entry");
                     }
                 }
             });
+    
             dom.calendarGrid.appendChild(dayDiv);
         }
     };
@@ -327,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (moodChartInstance) {
             moodChartInstance.destroy();
         }
-
         const today = new Date();
         const last7Days = Array(7).fill(0).map((_, i) => {
             const d = new Date(today);
@@ -407,14 +434,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.breathingSetup.style.display = 'none';
         dom.breathingFeedback.style.display = 'none';
         dom.breathingSession.style.display = 'flex';
-    
         let timeLeft = breathingDuration;
         const updateTimer = () => {
             const minutes = Math.floor(timeLeft / 60);
             const seconds = timeLeft % 60;
             dom.breathingTimer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         };
-    
         countdownInterval = setInterval(() => {
             timeLeft--;
             updateTimer();
@@ -425,21 +450,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 dom.breathingFeedback.style.display = 'flex';
             }
         }, 1000);
-    
         const runCycle = () => {
             dom.breathingCircle.classList.remove('breathe-out');
             dom.breathingInstruction.textContent = 'Breathe In';
             dom.breathingCircle.classList.add('breathe-in');
-    
             setTimeout(() => { dom.breathingInstruction.textContent = 'Hold'; }, 4000);
-    
             setTimeout(() => {
                 dom.breathingInstruction.textContent = 'Breathe Out';
                 dom.breathingCircle.classList.remove('breathe-in');
                 dom.breathingCircle.classList.add('breathe-out');
             }, 8000);
         };
-    
         updateTimer();
         runCycle();
         breathingInterval = setInterval(runCycle, 12000);
@@ -447,7 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const promptForMood = async () => {
         const todayStr = getLocalDateString(new Date());
-        // --- TOUR: Switched from localStorage to a user-specific key ---
         if (localStorage.getItem(`moodPromptLastShown_${userId}`) !== todayStr) {
             dom.moodModal.classList.add('active');
         }
@@ -478,70 +498,71 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.mobileSidebarMenu.classList.add('-translate-x-full');
     };
     
-    const setDailyQuote = async () => {
-        const todayStr = getLocalDateString(new Date());
-        const storedQuoteData = JSON.parse(localStorage.getItem('dailyQuote'));
-
-        if (storedQuoteData && storedQuoteData.date === todayStr) {
-            dom.dailyQuoteText.textContent = storedQuoteData.quote;
-            dom.dailyQuoteAuthor.textContent = storedQuoteData.author;
-        } else {
-            try {
-                const response = await fetch('/api/get-daily-quote', { method: 'POST' });
-                if (!response.ok) throw new Error('Failed to fetch quote');
-                
-                const result = await response.json();
-                const fullQuoteText = result.candidates[0].content.parts[0].text;
-                
-                const parts = fullQuoteText.split(' - ');
-                const quote = parts[0].replace(/"/g, '');
-                const author = parts.length > 1 ? `- ${parts[1]}` : '';
-
-                dom.dailyQuoteText.textContent = `"${quote}"`;
-                dom.dailyQuoteAuthor.textContent = author;
-
-                localStorage.setItem('dailyQuote', JSON.stringify({
-                    date: todayStr,
-                    quote: `"${quote}"`,
-                    author: author
-                }));
-
-            } catch (error) {
-                console.error("Error fetching daily quote:", error);
-                dom.dailyQuoteText.textContent = `"The best way to capture moments is to pay attention."`;
-                dom.dailyQuoteAuthor.textContent = `- Jon Kabat-Zinn`;
-            }
-        }
-    };
-
     const formatText = (command) => {
         document.execCommand(command, false, null);
         dom.entryContentEditor.focus();
     };
 
-    const getAIPrompt = async () => {
+    const updateStreak = async (settings) => {
+        const today = new Date();
+        const todayStr = getLocalDateString(today);
+        const yesterday = new Date(today);
+        yesterday.setDate(today.getDate() - 1);
+        const yesterdayStr = getLocalDateString(yesterday);
+
+        let currentStreak = settings.streak || 0;
+        const lastEntryDate = settings.lastEntryDate;
+
+        if (lastEntryDate) {
+            if (lastEntryDate !== todayStr && lastEntryDate !== yesterdayStr) {
+                currentStreak = 0;
+            }
+        } else {
+            currentStreak = 0;
+        }
+
+        dom.streakCount.textContent = currentStreak;
+    };
+
+    const setDailyPrompt = async () => {
+        const todayStr = getLocalDateString(new Date());
+        const storedPromptData = JSON.parse(localStorage.getItem('dailyPrompt'));
+
+        if (storedPromptData && storedPromptData.date === todayStr) {
+            dom.promptOfTheDayText.textContent = storedPromptData.prompt;
+        } else {
+            try {
+                const response = await fetch('/api/get-daily-prompt', { method: 'POST' });
+                if (!response.ok) throw new Error('Failed to fetch prompt');
+                
+                const result = await response.json();
+                const prompt = result.candidates[0].content.parts[0].text.replace(/"/g, '');
+
+                dom.promptOfTheDayText.textContent = prompt;
+                localStorage.setItem('dailyPrompt', JSON.stringify({ date: todayStr, prompt: prompt }));
+            } catch (error) {
+                console.error("Error fetching daily prompt:", error);
+                dom.promptOfTheDayText.textContent = "What's one small thing that made you smile today?";
+            }
+        }
+    };
+    
+    const getAIPromptForEditor = async () => {
         dom.aiPromptBtn.disabled = true;
         dom.aiPromptBtn.innerHTML = `<i data-feather="loader" class="w-5 h-5 animate-spin"></i> Generating...`;
         feather.replace();
     
         try {
-            const apiUrl = '/api/get-prompt';
-    
-            const response = await fetch(apiUrl, {
+            const response = await fetch('/api/get-prompt', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
     
-            if (!response.ok) {
-                const errorResult = await response.json();
-                throw new Error(errorResult.message || `API error: ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`API error: ${response.statusText}`);
     
             const result = await response.json();
     
-            if (result.candidates && result.candidates.length > 0 &&
-                result.candidates[0].content && result.candidates[0].content.parts &&
-                result.candidates[0].content.parts.length > 0) {
+            if (result.candidates && result.candidates[0].content.parts[0].text) {
                 const generatedText = result.candidates[0].content.parts[0].text;
                 dom.entryContentEditor.innerHTML = `<p><em>${generatedText.trim()}</em></p><p><br></p>` + dom.entryContentEditor.innerHTML;
                 dom.entryContentEditor.focus();
@@ -554,12 +575,56 @@ document.addEventListener('DOMContentLoaded', () => {
             showCustomAlert(`Sorry, could not get a prompt right now. ${error.message}`, "AI Error");
         } finally {
             dom.aiPromptBtn.disabled = false;
-            dom.aiPromptBtn.innerHTML = `<i data-feather="sparkles" class="w-5 h-5"></i> Get AI Prompt`;
+            dom.aiPromptBtn.innerHTML = `<i data-feather="edit-3" class="w-5 h-5"></i> Get AI Prompt`;
             feather.replace();
         }
     };
 
-    // --- Settings Functions ---
+    const analyzeEntry = async () => {
+        const entryText = dom.entryContentEditor.innerText;
+        if (!entryText.trim()) {
+            showCustomAlert("There's nothing to analyze. Please write something first.", "Empty Entry");
+            return;
+        }
+
+        dom.analyzeEntryBtn.disabled = true;
+        dom.analyzeEntryBtn.innerHTML = `<i data-feather="loader" class="w-5 h-5 animate-spin"></i> Analyzing...`;
+        feather.replace();
+
+        try {
+            const response = await fetch('/api/summarize-entry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: entryText })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to get analysis from the server.');
+            }
+
+            const result = await response.json();
+            
+            if (result.summary && result.sentiment) {
+                dom.aiSummary.textContent = result.summary;
+                dom.aiSentiment.textContent = result.sentiment;
+                dom.aiInsightsContainer.classList.remove('hidden');
+                feather.replace();
+            } else {
+                throw new Error('Invalid response format from analysis API.');
+            }
+
+        } catch (error) {
+            console.error("Error analyzing entry:", error);
+            showCustomAlert(`Sorry, we couldn't analyze this entry right now. ${error.message}`, "AI Error");
+        } finally {
+            dom.analyzeEntryBtn.disabled = false;
+            dom.analyzeEntryBtn.innerHTML = `<i data-feather="sparkles" class="w-5 h-5"></i> Analyze Entry`;
+            feather.replace();
+        }
+    };
+
+
     const applySettings = (settings) => {
         if (settings.profilePicture) {
             dom.sidebarProfilePic.src = settings.profilePicture;
@@ -568,7 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (settings.theme) {
             document.body.classList.remove(...THEME_CLASSES);
             document.body.classList.add(settings.theme);
-            
             dom.themeOptions.forEach(opt => {
                 opt.classList.toggle('active', opt.dataset.theme === settings.theme);
             });
@@ -630,6 +694,19 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const docRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/journalEntries`, editingMemoryId);
                 await setDoc(docRef, entryData, { merge: true });
+                
+                const settingsRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/settings`, 'userProfile');
+                const settingsDoc = await getDoc(settingsRef);
+                const settings = settingsDoc.data() || {};
+                const todayStr = getLocalDateString(new Date());
+                if (settings.lastEntryDate !== todayStr) {
+                    const yesterday = new Date();
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    const yesterdayStr = getLocalDateString(yesterday);
+                    const newStreak = (settings.lastEntryDate === yesterdayStr) ? (settings.streak || 0) + 1 : 1;
+                    await saveSetting({ streak: newStreak, lastEntryDate: todayStr });
+                }
+
                 showView('calendar-view');
                 showCustomAlert('Memory saved!', 'Success');
             } catch (error) {
@@ -656,7 +733,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         
-        // --- Breathing Listeners ---
         dom.durationBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 if (btn.id === 'custom-duration-btn') return;
@@ -683,11 +759,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         
         dom.startBreathingBtn.addEventListener('click', startBreathing);
-
-        dom.feedbackEmojis.forEach(emoji => {
-            emoji.addEventListener('click', resetBreathingSession);
-        });
-        // --- End Breathing Listeners ---
+        dom.feedbackEmojis.forEach(emoji => emoji.addEventListener('click', resetBreathingSession));
         
         dom.entryImageUpload.addEventListener('change', (event) => {
             const file = event.target.files[0];
@@ -704,7 +776,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const todayStr = getLocalDateString(new Date());
             try {
                 await setDoc(doc(db, `artifacts/${canvasAppId}/users/${userId}/moods`, todayStr), { moodEmoji: emoji.dataset.mood });
-                // --- TOUR: Switched from localStorage to a user-specific key ---
                 localStorage.setItem(`moodPromptLastShown_${userId}`, todayStr);
                 dom.moodModal.classList.remove('active');
             } catch (error) {
@@ -726,11 +797,53 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.mobileSidebarOverlay.addEventListener('click', closeMobileSidebar);
         dom.addEntryBtnMobile.addEventListener('click', () => dom.addEntryBtn.click());
         dom.logoutBtnMobile.addEventListener('click', () => dom.logoutBtn.click());
-        dom.aiPromptBtn.addEventListener('click', getAIPrompt);
         dom.formatButtons.forEach(button => button.addEventListener('click', () => formatText(button.dataset.command)));
         dom.backBtn.addEventListener('click', () => showView('calendar-view'));
 
-        // --- Settings Event Listeners ---
+        dom.promptOfTheDaySection.addEventListener('click', () => {
+            const promptText = dom.promptOfTheDayText.textContent;
+            openEntryForEditing(null, true, getLocalDateString(new Date()), `<p><em>${promptText}</em></p><p><br></p>`);
+        });
+
+        const openGratitudeModal = () => dom.gratitudeModal.classList.add('active');
+        const closeGratitudeModal = () => dom.gratitudeModal.classList.remove('active');
+
+        dom.gratitudeBtn.addEventListener('click', openGratitudeModal);
+        dom.gratitudeBtnMobile.addEventListener('click', openGratitudeModal);
+        dom.gratitudeCancelBtn.addEventListener('click', closeGratitudeModal);
+
+        dom.gratitudeSaveBtn.addEventListener('click', async () => {
+            const gratitudes = [
+                document.getElementById('gratitude-1').value.trim(),
+                document.getElementById('gratitude-2').value.trim(),
+                document.getElementById('gratitude-3').value.trim()
+            ].filter(g => g);
+
+            if (gratitudes.length === 0) {
+                showCustomAlert("Please enter at least one thing you're grateful for.", "Empty List");
+                return;
+            }
+
+            const todayStr = getLocalDateString(new Date());
+            const gratitudeData = {
+                gratitudes: gratitudes,
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                const gratitudeRef = doc(db, `artifacts/${canvasAppId}/users/${userId}/gratitudes`, todayStr);
+                await setDoc(gratitudeRef, gratitudeData);
+                closeGratitudeModal();
+                showCustomAlert("Gratitude list saved!", "Success");
+            } catch (error) {
+                console.error("Error saving gratitude:", error);
+                showCustomAlert("Could not save your gratitude list.", "Error");
+            }
+        });
+
+        dom.aiPromptBtn.addEventListener('click', getAIPromptForEditor);
+        dom.analyzeEntryBtn.addEventListener('click', analyzeEntry);
+
         dom.profilePicUpload.addEventListener('change', async (event) => {
             const file = event.target.files[0];
             if (file) {
