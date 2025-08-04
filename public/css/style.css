@@ -45,7 +45,6 @@ body.journal-app-body {
 }
 .calendar-day:hover { background-color: #f0f0f0; }
 
-/* NEW: Style for calendar day background color based on mood */
 .calendar-day-mood-bg {
     position: absolute;
     top: 0;
@@ -77,25 +76,7 @@ body.journal-app-body {
     animation: fadeIn 0.3s ease-out;
 }
 .custom-alert-modal.active { display: flex; }
-#entry-content-editor {
-    min-height: 200px;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.5rem;
-    padding: 1rem;
-    outline: none;
-    overflow-y: auto;
-    line-height: 1.6;
-    background-color: #fff;
-}
-#entry-content-editor:focus {
-    border-color: #93c5fd;
-    box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.5);
-}
-#entry-content-editor:empty:before {
-    content: attr(placeholder);
-    color: #a1a1aa;
-    pointer-events: none;
-}
+
 .duration-btn {
     border: 1px solid #e2e8f0;
     background-color: white;
@@ -109,14 +90,12 @@ body.journal-app-body {
     font-weight: 600;
 }
 
-/* --- THEME: Animated Gradient Keyframes --- */
+/* --- THEME STYLES (Original) --- */
 @keyframes gradient-animation {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
-
-/* --- THEME: Theme Selector Box Styles --- */
 .theme-option {
     border: 3px solid rgba(255, 255, 255, 0.5);
     transition: all 0.2s ease-in-out;
@@ -133,16 +112,12 @@ body.journal-app-body {
     box-shadow: 0 0 0 4px var(--theme-active-ring, #3b82f6), 0 8px 12px rgba(0,0,0,0.15);
     transform: translateY(-2px);
 }
-
-/* --- THEME: Selector Box Gradients (to preview the theme) --- */
 .theme-option[data-theme="theme-default"] { background-image: linear-gradient(45deg, #a8b2ff, #c2d2ff, #e0e7ff); }
 .theme-option[data-theme="theme-sunset"] { background-image: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb); }
 .theme-option[data-theme="theme-serenity"] { background-image: linear-gradient(45deg, #84fab0, #8fd3f4, #a1c4fd); }
 .theme-option[data-theme="theme-meadow"] { background-image: linear-gradient(45deg, #c1dfc4, #deecdd, #f6fff8); }
 .theme-option[data-theme="theme-dusk"] { background-image: linear-gradient(45deg, #6b73ff, #a2a7ff, #c8cbff); }
 
-
-/* --- THEME: General App Theme Styles --- */
 body {
     --theme-bg-gradient: linear-gradient(to top right, #eef2ff, #f9fafb);
     --theme-primary-btn-bg: #1f2937;
@@ -152,76 +127,150 @@ body {
     --theme-active-ring: #3b82f6;
     --theme-streak-icon: #f97316;
 }
-
 body #app-wrapper {
     transition: background-image 0.5s ease-in-out;
     background-image: var(--theme-bg-gradient);
 }
-#add-entry-btn {
-    background-color: var(--theme-primary-btn-bg);
-}
-#add-entry-btn:hover {
-    background-color: var(--theme-primary-btn-hover-bg);
-}
-.calendar-day.bg-blue-50 {
-    background-color: var(--theme-today-bg) !important;
-}
-.font-semibold.text-blue-600 {
-    color: var(--theme-today-text) !important;
-}
-#streak-icon {
-    color: var(--theme-streak-icon);
+/* ... other original theme styles ... */
+
+
+/* --- NEW: Happy Memories Diary Styles --- */
+#memories-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start; /* Align to top */
+    padding-top: 2rem;
 }
 
-/* --- Theme: Sunset --- */
-body.theme-sunset {
-    --theme-bg-gradient: linear-gradient(to top right, #fff1f2, #fefce8);
-    --theme-primary-btn-bg: #f97316;
-    --theme-primary-btn-hover-bg: #ea580c;
-    --theme-today-bg: #fff7ed;
-    --theme-today-text: #f97316;
-    --theme-active-ring: #f97316;
-    --theme-streak-icon: #f59e0b;
+.diary-container {
+    width: 100%;
+    max-width: 1100px;
+    aspect-ratio: 16/9;
+    max-height: 70vh;
+    background-color: #3a3a3a; /* Dark spine color */
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 0 0 0 5px #2d2d2d;
+    display: flex;
+    position: relative;
+    padding: 10px;
 }
 
-/* --- Theme: Serenity --- */
-body.theme-serenity {
-    --theme-bg-gradient: linear-gradient(to top right, #ecfdf5, #f0f9ff);
-    --theme-primary-btn-bg: #059669;
-    --theme-primary-btn-hover-bg: #047857;
-    --theme-today-bg: #ecfdf5;
-    --theme-today-text: #059669;
-    --theme-active-ring: #059669;
-    --theme-streak-icon: #10b981;
+.diary-page {
+    display: none; /* Pages are hidden by default */
+    width: 100%;
+    height: 100%;
+    display: flex;
+    gap: 10px;
+    animation: fadeIn 0.3s;
 }
 
-/* --- Theme: Meadow --- */
-body.theme-meadow {
-    --theme-bg-gradient: linear-gradient(to top right, #f0fdf4, #f7fee7);
-    --theme-primary-btn-bg: #65a30d;
-    --theme-primary-btn-hover-bg: #4d7c0f;
-    --theme-today-bg: #f7fee7;
-    --theme-today-text: #65a30d;
-    --theme-active-ring: #65a30d;
-    --theme-streak-icon: #84cc16;
+.diary-page.active {
+    display: flex; /* Active page is shown */
 }
 
-/* --- Theme: Dusk --- */
-body.theme-dusk {
-    --theme-bg-gradient: linear-gradient(to top right, #e0e7ff, #f3f4f6);
-    --theme-primary-btn-bg: #4f46e5;
-    --theme-primary-btn-hover-bg: #4338ca;
-    --theme-today-bg: #eef2ff;
-    --theme-today-text: #4f46e5;
-    --theme-active-ring: #4f46e5;
-    --theme-streak-icon: #6366f1;
+.diary-left, .diary-right {
+    flex-basis: 50%;
+    background-color: #fdfaf4; /* Warm paper color */
+    padding: 2rem 2.5rem;
+    overflow-y: auto;
+    box-shadow: inset 3px 0 5px -2px rgba(0,0,0,0.1);
 }
 
-/* Custom Font Themes */
-body.theme-serenity, body.theme-meadow, body.theme-dusk {
+.diary-left {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-right: 1px solid #e0dcd7;
+}
+
+.diary-right {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+    line-height: 1.7;
+}
+
+.diary-right h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #4a2c2a;
+    border-bottom: 1px solid #dcd6d1;
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.diary-right p {
     font-family: 'Lora', serif;
+    color: #5d5d5d;
+    white-space: pre-wrap; /* Preserve line breaks from editor */
 }
-body.theme-serenity .font-serif, body.theme-meadow .font-serif, body.theme-dusk .font-serif {
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
+
+.diary-image {
+    width: 100%;
+    height: auto;
+    max-height: 70%;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    border: 8px solid white;
+    transform: rotate(-3deg);
+}
+
+.diary-date {
+    font-family: 'Lora', serif;
+    font-style: italic;
+    color: #888;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.diary-bookmark {
+    position: absolute;
+    top: -10px;
+    left: 40%;
+    width: 40px;
+    height: 150px;
+    background: linear-gradient(to bottom, #c1121f, #780000);
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+    border-radius: 0 0 20px 20px;
+    z-index: 10;
+}
+
+.diary-navigation {
+    margin-top: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #3a3a3a;
+}
+
+.diary-nav-btn {
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+}
+
+.diary-nav-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.diary-nav-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#diary-page-counter {
+    font-weight: 500;
+    font-size: 1.1rem;
+    min-width: 80px;
+    text-align: center;
 }
