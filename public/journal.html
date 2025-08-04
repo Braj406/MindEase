@@ -12,8 +12,90 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/css/shepherd.css"/>
     
-    <!-- Existing ShepherdJS Styles -->
     <style>
+        /* Base and Font Styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .font-playfair-display { font-family: 'Playfair Display', serif; }
+        .font-lora { font-family: 'Lora', serif; }
+
+        /* General App Layout */
+        .view { display: none; }
+        .view.active { display: block; }
+        #mobile-sidebar-menu { transform: translateX(-100%); }
+
+        /* Journal Entry "Book" Style */
+        .ruled-paper {
+            background-color: #FFFCF5; /* A warm, paper-like off-white */
+            background-image: linear-gradient(to bottom, transparent 31px, #e7e2dc 32px);
+            background-size: 100% 32px;
+            line-height: 32px;
+            padding-top: 2rem;
+        }
+        #entry-content-editor[placeholder]:empty:before {
+            content: attr(placeholder);
+            color: #a9a29c; /* A soft, brownish-gray */
+            cursor: text;
+            pointer-events: none;
+        }
+
+        /* NEW: Happy Memories Diary Styles */
+        .diary-container {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 60vh;
+            min-height: 450px;
+            margin: auto;
+            background-color: #fdfaf4;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 0 0 10px #e7e2dc, 0 0 0 12px #c9c1b9;
+        }
+        .diary-bookmark {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            width: 30px;
+            height: 80px;
+            background-color: #d9534f;
+            border-bottom-left-radius: 5px;
+            border-bottom-right-radius: 5px;
+            box-shadow: inset 0 -5px 5px rgba(0,0,0,0.15);
+        }
+        .diary-page {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 30px 40px;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .diary-page.active { display: flex; flex-direction: row; }
+        .diary-left { width: 50%; padding-right: 20px; display: flex; flex-direction: column; }
+        .diary-right { width: 50%; padding-left: 20px; border-left: 1px dashed #d1c7be; overflow-y: auto; }
+        .diary-image { width: 100%; height: 70%; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; background-color: #e2e8f0; }
+        .diary-date { font-family: 'Lora', serif; font-style: italic; color: #57534e; text-align: center; margin-top: auto; }
+        .diary-right h3 { font-family: 'Playfair Display', serif; font-size: 1.75rem; color: #44403c; margin-bottom: 1rem; }
+        .diary-right div { font-family: 'Lora', serif; line-height: 1.8; color: #57534e; }
+        .diary-navigation { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+        .diary-nav-btn { background: white; border: 1px solid #d1d5db; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .diary-nav-btn:hover:not(:disabled) { background: #f3f4f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .diary-nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #diary-page-counter { font-weight: 500; color: #4b5563; }
+        
+        /* Modal & Alert Styles */
+        .custom-alert-modal, .mood-modal { display: none; }
+        .custom-alert-modal.active, .mood-modal.active { display: flex; }
+
+        /* Sidebar & Nav Link Styles */
+        .nav-link { display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: 0.5rem; font-weight: 500; color: #4b5563; transition: all 0.2s; }
+        .nav-link:hover { background-color: #f3f4f6; color: #1f2937; }
+        .nav-link.active { background-color: #f3f4f6; font-weight: 600; color: #1f2937; }
+        
+        /* Shepherd Tour Styles */
         .shepherd-button { background: #3b82f6; border-radius: 0.5rem; padding: 0.5rem 1.5rem; color: white; transition: background-color 0.2s; }
         .shepherd-button:not(.shepherd-button-secondary):hover { background: #2563eb; }
         .shepherd-button.shepherd-button-secondary { background: #e5e7eb; color: #374151; }
@@ -24,271 +106,279 @@
         .shepherd-cancel-icon { font-size: 1.5rem; }
         .shepherd-cancel-icon:hover { color: #ef4444; }
     </style>
-
-    <!-- NEW: Custom styles for the advanced journal view -->
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .font-playfair-display { font-family: 'Playfair Display', serif; }
-        .font-lora { font-family: 'Lora', serif; }
-
-        /* Ruled paper effect for the journal entry */
-        .ruled-paper {
-            background-color: #FFFCF5; /* A warm, paper-like off-white */
-            background-image: linear-gradient(to bottom, transparent 31px, #e2d8d3 32px);
-            background-size: 100% 32px;
-            line-height: 32px; /* Match the background-size */
-            padding-top: 2rem; /* Give some space at the top before lines start */
-        }
-
-        /* Styling the placeholder for a contenteditable div */
-        #entry-content-editor[placeholder]:empty:before {
-            content: attr(placeholder);
-            color: #a9a29c; /* A soft, brownish-gray */
-            cursor: text;
-            pointer-events: none;
-        }
-
-        /* Base view styling */
-        .view {
-            display: none;
-        }
-        .view.active {
-            display: block;
-        }
-        
-        /* Mobile sidebar starts off-screen */
-        #mobile-sidebar-menu {
-            transform: translateX(-100%);
-        }
-    </style>
 </head>
-<body class="antialiased bg-stone-50">
+<body class="bg-stone-50 theme-default">
 
     <div id="loading-view" class="view active h-screen flex items-center justify-center">
         <p class="text-gray-500">Loading your journal...</p>
     </div>
 
     <div id="app-wrapper" class="hidden flex-col md:flex-row h-screen">
-        <!-- Sidebar Navigation -->
         <nav id="sidebar" class="hidden md:flex w-64 bg-white shadow-md flex-col p-6 rounded-r-xl z-20">
-            <!-- Sidebar content remains the same -->
             <div class="flex items-center justify-between mb-10">
                 <div class="flex items-center">
-                    <img id="sidebar-profile-pic" src="https://placehold.co/40x40/e2e8f0/4a5568?text=ME" class="w-10 h-10 rounded-full mr-3">
-                    <h1 class="text-3xl font-bold text-gray-800 font-serif">Journal</h1>
+                    <img id="sidebar-profile-pic" src="https://placehold.co/40x40/e2e8f0/4a5568?text=ME" class="w-10 h-10 rounded-full mr-3 object-cover">
+                    <h1 class="text-2xl font-bold font-playfair-display text-logo-main">MindEase</h1>
                 </div>
                 <div id="streak-tracker" class="flex items-center text-orange-500" title="Your daily journaling streak!">
-                    <i id="streak-icon" data-feather="zap" class="w-6 h-6"></i>
+                    <i data-feather="zap" class="w-6 h-6"></i>
                     <span id="streak-count" class="font-bold text-xl ml-1">0</span>
                 </div>
             </div>
-            <ul class="space-y-3">
-                <li><a href="#" class="nav-link active" data-target="calendar-view"><i data-feather="calendar" class="mr-3"></i>Calendar</a></li>
-                <li><a href="#" class="nav-link" data-target="memories-view"><i data-feather="smile" class="mr-3"></i>Happy Memories</a></li>
-                <li><a href="#" class="nav-link" data-target="mood-tracker-view"><i data-feather="bar-chart-2" class="mr-3"></i>Mood Tracker</a></li>
+            <ul class="space-y-2">
+                <li><a href="#" class="nav-link active" data-target="calendar-view"><i data-feather="calendar" class="mr-3 w-5 h-5"></i>Calendar</a></li>
+                <li><a href="#" class="nav-link" data-target="memories-view"><i data-feather="smile" class="mr-3 w-5 h-5"></i>Happy Memories</a></li>
+                <li><a href="#" class="nav-link" data-target="mood-tracker-view"><i data-feather="bar-chart-2" class="mr-3 w-5 h-5"></i>Mood Tracker</a></li>
+                <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3 w-5 h-5"></i>Breathing</a></li>
             </ul>
             <div class="mt-auto space-y-4">
-                <button id="add-entry-btn" class="w-full bg-stone-800 text-white font-semibold py-3 rounded-lg shadow-md transition-colors hover:bg-stone-700 flex items-center justify-center">
-                    <i data-feather="plus" class="mr-2"></i>New Entry
+                <button id="gratitude-btn" class="w-full btn-secondary flex items-center justify-center">
+                    <i data-feather="heart" class="mr-2 w-5 h-5"></i>Today's Gratitude
                 </button>
+                <button id="add-entry-btn" class="w-full btn-primary flex items-center justify-center">
+                    <i data-feather="plus" class="mr-2 w-5 h-5"></i>New Entry
+                </button>
+                 <a href="#" class="nav-link !px-2" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a>
+                 <a href="#" id="logout-btn" class="nav-link !px-2"><i data-feather="log-out" class="mr-3"></i>Logout</a>
             </div>
         </nav>
 
         <main class="flex-1 p-4 md:p-8 overflow-y-auto relative">
             <div class="md:hidden flex justify-between items-center p-4 bg-white shadow-sm rounded-lg mb-4">
-                <h2 class="text-2xl font-bold text-gray-800 font-serif">Journal</h2>
+                <h2 class="text-2xl font-bold font-playfair-display text-logo-main">MindEase</h2>
                 <button id="mobile-menu-btn" class="p-2 rounded-md hover:bg-gray-100">
                     <i data-feather="menu" class="w-6 h-6"></i>
                 </button>
             </div>
             
             <div id="calendar-view" class="view">
-                <!-- Calendar content remains the same -->
                 <header class="flex justify-between items-center mb-6">
-                    <h2 id="month-year-header" class="text-2xl sm:text-4xl font-bold text-gray-800">July 2025</h2>
+                    <h2 id="month-year-header" class="text-3xl sm:text-4xl font-bold font-playfair-display text-gray-800">Month Year</h2>
+                    <div class="flex items-center space-x-2">
+                        <button id="prev-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors"><i data-feather="chevron-left"></i></button>
+                        <button id="next-month-btn" class="p-2 rounded-full hover:bg-gray-200 transition-colors"><i data-feather="chevron-right"></i></button>
+                    </div>
                 </header>
-                <div id="calendar-grid" class="grid grid-cols-7 bg-white rounded-xl shadow"></div>
+                 <div id="prompt-of-the-day-section" class="bg-gradient-to-r from-blue-100 to-indigo-100 p-6 rounded-xl mb-6 cursor-pointer hover:shadow-lg transition-shadow">
+                    <h3 class="font-semibold text-gray-800 mb-2">💡 Prompt of the Day</h3>
+                    <p id="prompt-of-the-day-text" class="text-gray-600 italic">Loading prompt...</p>
+                </div>
+                <div id="calendar-grid" class="grid grid-cols-7 bg-white rounded-xl shadow-md calendar-container"></div>
             </div>
 
             <div id="memories-view" class="view">
-                <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-6">My Happy Memories</h2>
-                <div id="memories-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 font-playfair-display">My Happy Memories</h2>
+                
+                <div class="diary-container hidden">
+                    <div class="diary-bookmark"></div>
+                    <div id="diary-pages-container" class="w-full h-full">
+                        </div>
+                </div>
+
+                <div class="diary-navigation hidden">
+                    <button id="diary-prev-btn" class="diary-nav-btn"><i data-feather="arrow-left"></i></button>
+                    <span id="diary-page-counter"></span>
+                    <button id="diary-next-btn" class="diary-nav-btn"><i data-feather="arrow-right"></i></button>
+                </div>
+
+                 <div id="no-memories-message" class="hidden text-center text-gray-500 mt-8 p-8 bg-white rounded-lg shadow">
+                     <i data-feather="moon" class="w-16 h-16 mx-auto mb-4 text-gray-400"></i>
+                     <h3 class="text-xl font-semibold">It's a little empty here...</h3>
+                     <p>You haven't saved any "Happy Memories" yet. <br> When you write an entry, check the box to add it to your collection!</p>
+                 </div>
             </div>
 
             <div id="mood-tracker-view" class="view">
-                 <h2 class="text-2xl sm:text-4xl font-bold text-gray-800 mb-6">Mood Tracker</h2>
-                 <div class="bg-white p-6 rounded-xl shadow"><canvas id="mood-chart"></canvas></div>
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 font-playfair-display">Mood Tracker</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
+                        <h3 class="font-semibold mb-4">Last 7 Days</h3>
+                        <div id="mood-chart-container" class="h-64"><canvas id="mood-chart"></canvas></div>
+                    </div>
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                            <h3 class="font-semibold mb-2">Weekly High</h3>
+                            <div id="weekly-high" class="text-5xl">...</div>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md text-center">
+                            <h3 class="font-semibold mb-2">Weekly Low</h3>
+                            <div id="weekly-low" class="text-5xl">...</div>
+                        </div>
+                         <button id="analyze-patterns-btn" class="w-full btn-primary flex items-center justify-center"><i data-feather="search" class="mr-2"></i>Analyze Patterns</button>
+                    </div>
+                </div>
+                <div id="patterns-result-container" class="mt-6 space-y-4"></div>
             </div>
 
-            <!-- ================================================================= -->
-            <!-- NEW & IMPROVED: Journal Entry View -->
-            <!-- ================================================================= -->
+            <div id="breathing-view" class="view h-full w-full relative flex flex-col items-center justify-center bg-white rounded-xl shadow-md">
+                <div id="breathing-setup" class="text-center">
+                    <h2 class="text-3xl font-bold font-playfair-display mb-2">Breathing Exercise</h2>
+                    <p class="text-gray-600 mb-6">Choose your session duration.</p>
+                    <div class="flex justify-center gap-4 mb-6">
+                        <button class="duration-btn" data-duration="60">1 min</button>
+                        <button class="duration-btn" data-duration="180">3 min</button>
+                        <button class="duration-btn" data-duration="300">5 min</button>
+                        <button id="custom-duration-btn" class="duration-btn">Custom</button>
+                    </div>
+                    <button id="start-breathing-btn" class="btn-primary px-8 py-3" disabled>Start</button>
+                </div>
+                <div id="breathing-session" class="hidden flex-col items-center justify-center">
+                    <div id="breathing-circle" class="breathing-circle"></div>
+                    <p id="breathing-instruction" class="text-2xl font-semibold mt-8"></p>
+                    <p id="breathing-timer" class="text-xl text-gray-500 mt-2"></p>
+                </div>
+                <div id="breathing-feedback" class="hidden flex-col items-center">
+                    <h3 class="text-2xl font-semibold mb-4">Well done! How do you feel?</h3>
+                    <div class="flex gap-4 text-4xl">
+                        <span class="feedback-emoji cursor-pointer">😌</span>
+                        <span class="feedback-emoji cursor-pointer">🧘</span>
+                        <span class="feedback-emoji cursor-pointer">😊</span>
+                    </div>
+                </div>
+            </div>
+
             <div id="entry-view" class="view">
-                <header class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4 sm:gap-2">
-                    <input type="text" id="entry-title-input" class="font-playfair-display text-3xl sm:text-4xl font-bold text-stone-700 bg-transparent outline-none w-full placeholder-stone-400" placeholder="A new chapter...">
-                    <div class="flex gap-2 w-full sm:w-auto justify-end">
-                        <button id="back-btn" class="bg-stone-200 text-stone-800 font-semibold py-2 px-6 rounded-lg shadow-sm transition-colors hover:bg-stone-300">Back</button>
-                        <button id="save-btn" class="bg-stone-800 text-white font-semibold py-2 px-6 rounded-lg shadow-md transition-colors hover:bg-stone-700">Save</button>
-                    </div>
-                </header>
-    
-                <div class="flex w-full max-w-6xl mx-auto bg-stone-800 shadow-2xl rounded-lg" style="min-height: 65vh;">
-                    <div class="w-1/2 bg-[#F4F1EC] rounded-l-lg p-8 flex flex-col items-center justify-center relative">
-                        <div class="absolute top-6 left-6 text-stone-500 font-lora">
-                            <p id="entry-date-display" class="font-semibold"></p>
+                 <header class="flex flex-col sm:flex-row justify-between items-start mb-4 gap-4 sm:gap-2">
+                     <div class="w-full">
+                        <input type="text" id="entry-title-input" class="font-playfair-display text-3xl sm:text-4xl font-bold text-stone-700 bg-transparent outline-none w-full placeholder-stone-400" placeholder="A new chapter...">
+                     </div>
+                     <div class="flex gap-2 w-full sm:w-auto justify-end flex-shrink-0">
+                         <button id="delete-btn" class="btn-danger-outline hidden"><i data-feather="trash-2" class="w-5 h-5"></i></button>
+                         <button id="analyze-entry-btn" class="btn-secondary hidden"><i data-feather="sparkles" class="w-5 h-5"></i> Analyze Entry</button>
+                         <button id="back-btn" class="btn-secondary">Back</button>
+                         <button id="save-btn" class="btn-primary">Save</button>
+                     </div>
+                 </header>
+        
+                 <div class="flex w-full max-w-6xl mx-auto bg-stone-800 shadow-2xl rounded-lg" style="min-height: 65vh;">
+                     <div class="w-1/2 bg-[#F4F1EC] rounded-l-lg p-8 flex flex-col relative">
+                         <label for="entry-image-upload" id="entry-image-label" class="cursor-pointer group flex-grow flex items-center justify-center">
+                            <img id="entry-image-preview" src="" class="w-full h-full object-cover bg-stone-100 rounded-md">
+                         </label>
+                         <input type="file" id="entry-image-upload" class="hidden" accept="image/*">
+                         <div id="ai-insights-container" class="mt-4 p-4 bg-blue-50 rounded-lg hidden">
+                            <h4 class="font-semibold text-blue-800">AI Insights ✨</h4>
+                            <p class="text-sm text-blue-700"><strong class="font-medium">Sentiment:</strong> <span id="ai-sentiment"></span></p>
+                            <p class="text-sm text-blue-700 mt-1"><strong class="font-medium">Summary:</strong> <span id="ai-summary"></span></p>
+                         </div>
+                     </div>
+        
+                     <div class="w-8 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-600 shadow-inner-lg"></div>
+        
+                     <div class="w-1/2 flex flex-col">
+                         <div class="flex-grow p-8 ruled-paper rounded-r-lg">
+                             <div id="toolbar" class="flex flex-wrap gap-1 mb-4 p-2 bg-stone-100/50 rounded-lg backdrop-blur-sm sticky top-4 z-10">
+                                <button type="button" class="format-btn" data-command="bold" title="Bold"><i data-feather="bold" class="w-5 h-5"></i></button>
+                                <button type="button" class="format-btn" data-command="italic" title="Italic"><i data-feather="italic" class="w-5 h-5"></i></button>
+                                <button type="button" class="format-btn" data-command="underline" title="Underline"><i data-feather="underline" class="w-5 h-5"></i></button>
+                                <button id="ai-prompt-btn" type="button" class="format-btn !ml-auto flex items-center gap-1"><i data-feather="edit-3" class="w-5 h-5"></i> Get AI Prompt</button>
+                             </div>
+                             <div id="entry-content-editor" contenteditable="true" class="w-full text-stone-700 font-lora text-lg leading-relaxed outline-none resize-none min-h-[40vh]" placeholder="Start writing your story..."></div>
+                         </div>
+                         
+                         <div class="bg-[#FFFCF5] rounded-br-lg p-6 border-t border-stone-200 flex items-center justify-between">
+                             <div id="happy-memory-container" class="flex items-center">
+                                 <input type="checkbox" id="happy-memory-checkbox" class="h-5 w-5 rounded border-gray-300 text-amber-500 focus:ring-amber-400">
+                                 <label for="happy-memory-checkbox" class="ml-2 block text-sm font-medium text-stone-700">Add to Happy Memories ✨</label>
+                             </div>
+                         </div>
+                     </div>
+                 </div>
+            </div>
+
+            <div id="settings-view" class="view">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 font-playfair-display">Settings</h2>
+                <div class="max-w-2xl mx-auto space-y-8">
+                    <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-4">Profile</h3>
+                        <div class="flex items-center gap-4">
+                            <img id="settings-profile-pic" src="https://placehold.co/80x80/e2e8f0/4a5568?text=ME" class="w-20 h-20 rounded-full object-cover">
+                            <label for="profile-pic-upload" class="btn-secondary cursor-pointer">Change Picture</label>
+                            <input type="file" id="profile-pic-upload" class="hidden" accept="image/*">
                         </div>
-                        <label for="entry-image-upload" id="entry-image-label" class="cursor-pointer group">
-                            <div class="relative w-full max-w-sm transform -rotate-2 group-hover:rotate-0 group-hover:scale-105 transition-transform duration-300">
-                                <div class="bg-white p-3 pb-8 rounded-md shadow-lg">
-                                     <img id="entry-image-preview" src="" class="h-64 w-full object-cover bg-stone-100 hidden">
-                                     <div id="image-upload-placeholder" class="h-64 w-full bg-stone-100 border-2 border-dashed border-stone-300 rounded-md flex flex-col items-center justify-center text-stone-500">
-                                        <i data-feather="camera" class="w-12 h-12 mb-2"></i>
-                                        <span class="font-semibold">Add a snapshot</span>
-                                        <span class="text-sm">Click to upload an image</span>
-                                     </div>
-                                </div>
-                            </div>
-                        </label>
-                        <input type="file" id="entry-image-upload" class="hidden" accept="image/*">
                     </div>
-    
-                    <div class="w-8 bg-gradient-to-r from-stone-900 via-stone-700 to-stone-600 shadow-inner"></div>
-    
-                    <div class="w-1/2 flex flex-col">
-                        <div class="flex-grow p-8 ruled-paper rounded-r-lg">
-                            <div id="toolbar" class="flex flex-wrap gap-1 mb-4 p-2 bg-stone-100/50 rounded-lg backdrop-blur-sm sticky top-4 z-10">
-                                <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="bold" title="Bold"><i data-feather="bold" class="w-5 h-5"></i></button>
-                                <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="italic" title="Italic"><i data-feather="italic" class="w-5 h-5"></i></button>
-                                <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="underline" title="Underline"><i data-feather="underline" class="w-5 h-5"></i></button>
-                                <button type="button" class="format-btn p-2 rounded-md hover:bg-stone-200" data-command="strikeThrough" title="Strikethrough"><i data-feather="type" class="w-5 h-5"></i></button>
-                            </div>
-                            <div id="entry-content-editor" contenteditable="true" class="w-full text-stone-700 font-lora text-lg leading-relaxed outline-none resize-none min-h-[40vh]" placeholder="Start writing your story..."></div>
-                        </div>
-                        
-                        <div class="bg-[#FFFCF5] rounded-br-lg p-6 border-t border-stone-200 flex items-center justify-between">
-                            <div id="happy-memory-container" class="flex items-center">
-                                <input type="checkbox" id="happy-memory-checkbox" class="h-5 w-5 rounded border-gray-300 text-amber-500 focus:ring-amber-400">
-                                <label for="happy-memory-checkbox" class="ml-2 block text-sm font-medium text-stone-700">Add to Happy Memories ✨</label>
-                            </div>
+                     <div class="bg-white p-6 rounded-lg shadow-md">
+                        <h3 class="text-xl font-semibold mb-4">Theme</h3>
+                        <div id="theme-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div class="theme-option" data-theme="theme-default">Default</div>
+                            <div class="theme-option" data-theme="theme-sunset">Sunset</div>
+                            <div class="theme-option" data-theme="theme-serenity">Serenity</div>
+                            <div class="theme-option" data-theme="theme-meadow">Meadow</div>
+                            <div class="theme-option" data-theme="theme-dusk">Dusk</div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </main>
     </div>
 
-    <!-- The script is now included directly in the HTML for reliability -->
-    <script type="module">
-      // Initialize Feather Icons
-      feather.replace();
+    <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+    <div id="mobile-sidebar-menu" class="fixed top-0 left-0 h-full w-64 bg-white shadow-lg flex-col p-6 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex">
+        <button id="close-mobile-menu-btn" class="absolute top-4 right-4 text-gray-500 hover:text-gray-800"><i data-feather="x"></i></button>
+        <div class="flex items-center justify-between mb-10"><h1 class="text-2xl font-bold font-playfair-display text-logo-main">MindEase</h1></div>
+        <ul class="space-y-2">
+             <li><a href="#" class="nav-link active" data-target="calendar-view"><i data-feather="calendar" class="mr-3 w-5 h-5"></i>Calendar</a></li>
+             <li><a href="#" class="nav-link" data-target="memories-view"><i data-feather="smile" class="mr-3 w-5 h-5"></i>Happy Memories</a></li>
+             <li><a href="#" class="nav-link" data-target="mood-tracker-view"><i data-feather="bar-chart-2" class="mr-3 w-5 h-5"></i>Mood Tracker</a></li>
+             <li><a href="#" class="nav-link" data-target="breathing-view"><i data-feather="wind" class="mr-3 w-5 h-5"></i>Breathing</a></li>
+        </ul>
+        <div class="mt-auto space-y-4">
+             <button id="gratitude-btn-mobile" class="w-full btn-secondary flex items-center justify-center"><i data-feather="heart" class="mr-2"></i>Today's Gratitude</button>
+             <button id="add-entry-btn-mobile" class="w-full btn-primary flex items-center justify-center"><i data-feather="plus" class="mr-2"></i>New Entry</button>
+             <a href="#" class="nav-link !px-2" data-target="settings-view"><i data-feather="settings" class="mr-3"></i>Settings</a>
+             <a href="#" id="logout-btn-mobile" class="nav-link !px-2"><i data-feather="log-out" class="mr-3"></i>Logout</a>
+        </div>
+    </div>
+    <div id="mood-modal" class="mood-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+         <div class="bg-white p-8 rounded-xl shadow-lg text-center">
+            <h2 class="text-2xl font-bold mb-4">How are you feeling today?</h2>
+            <div class="flex justify-center gap-4 text-5xl">
+                <span class="mood-emoji cursor-pointer transform hover:scale-125 transition-transform" data-mood="😍">😍</span>
+                <span class="mood-emoji cursor-pointer transform hover:scale-125 transition-transform" data-mood="😊">😊</span>
+                <span class="mood-emoji cursor-pointer transform hover:scale-125 transition-transform" data-mood="😴">😴</span>
+                <span class="mood-emoji cursor-pointer transform hover:scale-125 transition-transform" data-mood="😢">😢</span>
+                <span class="mood-emoji cursor-pointer transform hover:scale-125 transition-transform" data-mood="😠">😠</span>
+            </div>
+        </div>
+    </div>
+    <div id="gratitude-modal" class="custom-alert-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <h2 class="text-2xl font-bold mb-4">What are you grateful for?</h2>
+            <div class="space-y-3">
+                <input type="text" id="gratitude-1" class="w-full input-field" placeholder="1. Something small...">
+                <input type="text" id="gratitude-2" class="w-full input-field" placeholder="2. A person in your life...">
+                <input type="text" id="gratitude-3" class="w-full input-field" placeholder="3. Something you accomplished...">
+            </div>
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="gratitude-cancel-btn" class="btn-secondary">Cancel</button>
+                <button id="gratitude-save-btn" class="btn-primary">Save List</button>
+            </div>
+        </div>
+    </div>
+    <div id="entry-selection-modal" class="custom-alert-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+         <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+            <h2 id="entry-selection-title" class="text-2xl font-bold mb-4">Select an Entry</h2>
+            <div id="entry-selection-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
+            <div class="flex justify-end mt-6">
+                <button id="entry-selection-cancel-btn" class="btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div id="custom-alert-modal" class="custom-alert-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-sm text-center">
+            <h2 id="custom-alert-title" class="text-xl font-bold mb-2">Notification</h2>
+            <p id="custom-alert-message" class="text-gray-600 mb-4"></p>
+            <input type="text" id="custom-alert-input" class="w-full input-field hidden mb-4">
+            <div class="flex justify-center gap-3">
+                <button id="custom-alert-cancel-btn" class="btn-secondary hidden">Cancel</button>
+                <button id="custom-alert-ok-btn" class="btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
 
-      // --- DOM Element Cache ---
-      // Caching elements for quick access
-      const dom = {
-          views: document.querySelectorAll('.view'),
-          navLinks: document.querySelectorAll('.nav-link'),
-          addEntryBtn: document.getElementById('add-entry-btn'),
-          // Entry View Elements
-          entryView: document.getElementById('entry-view'),
-          entryTitleInput: document.getElementById('entry-title-input'),
-          entryContentEditor: document.getElementById('entry-content-editor'),
-          entryDateDisplay: document.getElementById('entry-date-display'),
-          entryImageUpload: document.getElementById('entry-image-upload'),
-          entryImagePreview: document.getElementById('entry-image-preview'),
-          imageUploadPlaceholder: document.getElementById('image-upload-placeholder'),
-          saveBtn: document.getElementById('save-btn'),
-          backBtn: document.getElementById('back-btn'),
-          // Other view elements
-          calendarView: document.getElementById('calendar-view'),
-      };
-
-      // --- View Switching Logic ---
-      function switchView(targetId) {
-        dom.views.forEach(view => {
-          view.classList.toggle('active', view.id === targetId);
-        });
-        dom.navLinks.forEach(link => {
-            link.classList.toggle('active', link.dataset.target === targetId);
-        });
-        feather.replace(); // Re-run feather icons in case new ones are displayed
-      }
-
-      // --- Journal Entry Logic ---
-      // This function is now updated to work with the new "book" layout
-      function showEntryView(date, entryData = null) {
-          switchView('entry-view');
-          
-          // Set the date display on the left page of the book
-          dom.entryDateDisplay.textContent = new Date(date).toLocaleDateString('en-US', {
-              year: 'numeric', month: 'long', day: 'numeric'
-          });
-
-          // Handle the image preview and placeholder logic
-          const hasImage = entryData && entryData.image;
-          dom.entryImagePreview.src = hasImage ? entryData.image : '';
-          dom.entryImagePreview.classList.toggle('hidden', !hasImage);
-          dom.imageUploadPlaceholder.classList.toggle('hidden', hasImage);
-          
-          // Populate title and content
-          dom.entryTitleInput.value = entryData ? entryData.title : '';
-          dom.entryContentEditor.innerHTML = entryData ? entryData.text : '';
-      }
-
-      // --- Event Listeners ---
-      
-      // Navigation links
-      dom.navLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const targetId = e.currentTarget.dataset.target;
-          switchView(targetId);
-        });
-      });
-      
-      // "New Entry" button
-      dom.addEntryBtn.addEventListener('click', () => {
-          // For a new entry, pass today's date and null for entry data
-          showEntryView(new Date(), null);
-      });
-
-      // "Back" button from entry view
-      dom.backBtn.addEventListener('click', () => {
-          switchView('calendar-view');
-      });
-
-      // Image uploader
-      dom.entryImageUpload.addEventListener('change', function(event) {
-          if (event.target.files && event.target.files[0]) {
-              const reader = new FileReader();
-              reader.onload = function(e) {
-                  dom.entryImagePreview.src = e.target.result;
-                  dom.entryImagePreview.classList.remove('hidden');
-                  dom.imageUploadPlaceholder.classList.add('hidden');
-              }
-              reader.readAsDataURL(event.target.files[0]);
-          }
-      });
-      
-      // Rich text editor toolbar
-      document.querySelectorAll('.format-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-              document.execCommand(btn.dataset.command, false, null);
-          });
-      });
-
-      // --- Initial Application Load ---
-      window.addEventListener('load', () => {
-          // Hide loading screen and show the main app
-          document.getElementById('loading-view').classList.remove('active');
-          document.getElementById('app-wrapper').classList.add('flex');
-          document.getElementById('app-wrapper').classList.remove('hidden');
-
-          // Set the initial view to the calendar
-          switchView('calendar-view');
-      });
-
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/shepherd.js@10.0.1/dist/js/shepherd.min.js"></script>
+    <script type="module" src="js/main.js"></script>
+    <script type="module" src="js/tour.js"></script>
 </body>
 </html>
