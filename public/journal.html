@@ -110,7 +110,6 @@
                         <div id="weekly-low" class="text-4xl sm:text-5xl text-center py-4">...</div>
                     </div>
                 </div>
-                <!-- NEW: Pattern Recognition Section -->
                 <div class="bg-white p-6 rounded-xl shadow mt-6">
                     <h3 class="font-bold text-lg mb-4">Your Patterns</h3>
                     <div id="pattern-analysis-container">
@@ -119,7 +118,6 @@
                             <i data-feather="search" class="mr-2"></i>Analyze My Patterns
                         </button>
                         <div id="patterns-result-container" class="mt-4 space-y-3">
-                            <!-- AI-generated patterns will be inserted here -->
                         </div>
                     </div>
                 </div>
@@ -287,6 +285,19 @@
             <div class="flex justify-center gap-4 mt-6">
                 <button id="gratitude-cancel-btn" class="bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-400 transition-colors">Cancel</button>
                 <button id="gratitude-save-btn" class="bg-yellow-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-yellow-600 transition-colors">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW: Modal for selecting from multiple entries -->
+    <div id="entry-selection-modal" class="custom-alert-modal fixed inset-0 bg-black/60 backdrop-blur-sm items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-md w-full">
+            <h3 id="entry-selection-title" class="text-xl font-bold text-gray-800 mb-4 text-center">Select an Entry</h3>
+            <div id="entry-selection-list" class="space-y-3 text-left">
+                <!-- Entry buttons will be dynamically inserted here -->
+            </div>
+            <div class="flex justify-center gap-4 mt-6">
+                <button id="entry-selection-cancel-btn" class="bg-gray-300 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-400 transition-colors">Cancel</button>
             </div>
         </div>
     </div>
