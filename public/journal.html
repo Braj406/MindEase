@@ -46,45 +46,55 @@
         .diary-container {
             position: relative;
             width: 100%;
-            max-width: 900px;
-            height: 60vh;
-            min-height: 450px;
+            max-width: 900px; /* Increased max-width */
+            height: 65vh; /* Adjusted height */
+            min-height: 480px; /* Adjusted min-height */
             margin: auto;
             background-color: #fdfaf4;
             border-radius: 10px;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1), 0 0 0 10px #e7e2dc, 0 0 0 12px #c9c1b9;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2), 0 0 0 10px #e7e2dc, 0 0 0 12px #c9c1b9;
         }
         .diary-bookmark {
             position: absolute;
             top: 20px;
             right: 40px;
             width: 30px;
-            height: 80px;
-            background-color: #d9534f;
+            height: 100px; /* Made bookmark longer */
+            background-color: #c1121f; /* Deeper red */
             border-bottom-left-radius: 5px;
             border-bottom-right-radius: 5px;
-            box-shadow: inset 0 -5px 5px rgba(0,0,0,0.15);
+            box-shadow: inset 0 -8px 8px rgba(0,0,0,0.2);
         }
         .diary-page {
             display: none;
             width: 100%;
             height: 100%;
             padding: 30px 40px;
-            flex-direction: column;
+            flex-direction: row; /* Changed to row for side-by-side */
             gap: 20px;
         }
-        .diary-page.active { display: flex; flex-direction: row; }
-        .diary-left { width: 50%; padding-right: 20px; display: flex; flex-direction: column; }
+        .diary-page.active { display: flex; }
+        .diary-left { width: 50%; padding-right: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
         .diary-right { width: 50%; padding-left: 20px; border-left: 1px dashed #d1c7be; overflow-y: auto; }
-        .diary-image { width: 100%; height: 70%; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 15px; background-color: #e2e8f0; }
-        .diary-date { font-family: 'Lora', serif; font-style: italic; color: #57534e; text-align: center; margin-top: auto; }
-        .diary-right h3 { font-family: 'Playfair Display', serif; font-size: 1.75rem; color: #44403c; margin-bottom: 1rem; }
-        .diary-right div { font-family: 'Lora', serif; line-height: 1.8; color: #57534e; }
-        .diary-navigation { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1.5rem; }
-        .diary-nav-btn { background: white; border: 1px solid #d1d5db; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
-        .diary-nav-btn:hover:not(:disabled) { background: #f3f4f6; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .diary-image { 
+            width: 100%; 
+            height: 70%; 
+            object-fit: cover; 
+            border-radius: 8px; 
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15); 
+            margin-bottom: 20px; 
+            background-color: #e2e8f0;
+            border: 6px solid white;
+            transform: rotate(-2deg);
+        }
+        .diary-date { font-family: 'Lora', serif; font-style: italic; color: #57534e; text-align: center; margin-top: auto; padding-bottom: 1rem; }
+        .diary-right h3 { font-family: 'Playfair Display', serif; font-size: 2rem; color: #44403c; margin-bottom: 1.5rem; border-bottom: 1px solid #e7e2dc; padding-bottom: 0.5rem;}
+        .diary-right div { font-family: 'Lora', serif; line-height: 1.9; color: #57534e; }
+        .diary-navigation { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; }
+        .diary-nav-btn { background: white; border: 1px solid #d1d5db; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);}
+        .diary-nav-btn:hover:not(:disabled) { background: #f3f4f6; box-shadow: 0 4px 8px rgba(0,0,0,0.1); transform: translateY(-2px); }
         .diary-nav-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        #diary-page-counter { font-weight: 500; color: #4b5563; }
+        #diary-page-counter { font-weight: 500; color: #4b5563; min-width: 70px; text-align: center; font-size: 1.1rem; }
         
         /* Modal & Alert Styles */
         .custom-alert-modal, .mood-modal { display: none; }
@@ -166,27 +176,37 @@
                 <div id="calendar-grid" class="grid grid-cols-7 bg-white rounded-xl shadow-md calendar-container"></div>
             </div>
 
-            <div id="memories-view" class="view">
-                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 font-playfair-display">My Happy Memories</h2>
+            <!-- ==================================================== -->
+            <!-- === NEW: Updated Happy Memories View with Diary === -->
+            <!-- ==================================================== -->
+            <div id="memories-view" class="view flex flex-col items-center justify-center">
+                <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-8 font-playfair-display">My Happy Memories</h2>
                 
+                <!-- Diary Container -->
                 <div class="diary-container hidden">
                     <div class="diary-bookmark"></div>
                     <div id="diary-pages-container" class="w-full h-full">
-                        </div>
+                        <!-- Diary pages will be injected here by JavaScript -->
+                    </div>
                 </div>
 
+                <!-- Diary Navigation -->
                 <div class="diary-navigation hidden">
                     <button id="diary-prev-btn" class="diary-nav-btn"><i data-feather="arrow-left"></i></button>
                     <span id="diary-page-counter"></span>
                     <button id="diary-next-btn" class="diary-nav-btn"><i data-feather="arrow-right"></i></button>
                 </div>
 
+                <!-- Message for when there are no memories -->
                  <div id="no-memories-message" class="hidden text-center text-gray-500 mt-8 p-8 bg-white rounded-lg shadow">
                      <i data-feather="moon" class="w-16 h-16 mx-auto mb-4 text-gray-400"></i>
                      <h3 class="text-xl font-semibold">It's a little empty here...</h3>
                      <p>You haven't saved any "Happy Memories" yet. <br> When you write an entry, check the box to add it to your collection!</p>
                  </div>
             </div>
+            <!-- ==================================================== -->
+            <!-- ================= End of New Section ================ -->
+            <!-- ==================================================== -->
 
             <div id="mood-tracker-view" class="view">
                 <h2 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-6 font-playfair-display">Mood Tracker</h2>
@@ -240,7 +260,7 @@
             <div id="entry-view" class="view">
                  <header class="flex flex-col sm:flex-row justify-between items-start mb-4 gap-4 sm:gap-2">
                      <div class="w-full">
-                        <input type="text" id="entry-title-input" class="font-playfair-display text-3xl sm:text-4xl font-bold text-stone-700 bg-transparent outline-none w-full placeholder-stone-400" placeholder="A new chapter...">
+                         <input type="text" id="entry-title-input" class="font-playfair-display text-3xl sm:text-4xl font-bold text-stone-700 bg-transparent outline-none w-full placeholder-stone-400" placeholder="A new chapter...">
                      </div>
                      <div class="flex gap-2 w-full sm:w-auto justify-end flex-shrink-0">
                          <button id="delete-btn" class="btn-danger-outline hidden"><i data-feather="trash-2" class="w-5 h-5"></i></button>
@@ -253,13 +273,13 @@
                  <div class="flex w-full max-w-6xl mx-auto bg-stone-800 shadow-2xl rounded-lg" style="min-height: 65vh;">
                      <div class="w-1/2 bg-[#F4F1EC] rounded-l-lg p-8 flex flex-col relative">
                          <label for="entry-image-upload" id="entry-image-label" class="cursor-pointer group flex-grow flex items-center justify-center">
-                            <img id="entry-image-preview" src="" class="w-full h-full object-cover bg-stone-100 rounded-md">
+                             <img id="entry-image-preview" src="" class="w-full h-full object-cover bg-stone-100 rounded-md">
                          </label>
                          <input type="file" id="entry-image-upload" class="hidden" accept="image/*">
                          <div id="ai-insights-container" class="mt-4 p-4 bg-blue-50 rounded-lg hidden">
-                            <h4 class="font-semibold text-blue-800">AI Insights ✨</h4>
-                            <p class="text-sm text-blue-700"><strong class="font-medium">Sentiment:</strong> <span id="ai-sentiment"></span></p>
-                            <p class="text-sm text-blue-700 mt-1"><strong class="font-medium">Summary:</strong> <span id="ai-summary"></span></p>
+                             <h4 class="font-semibold text-blue-800">AI Insights ✨</h4>
+                             <p class="text-sm text-blue-700"><strong class="font-medium">Sentiment:</strong> <span id="ai-sentiment"></span></p>
+                             <p class="text-sm text-blue-700 mt-1"><strong class="font-medium">Summary:</strong> <span id="ai-summary"></span></p>
                          </div>
                      </div>
         
@@ -268,10 +288,10 @@
                      <div class="w-1/2 flex flex-col">
                          <div class="flex-grow p-8 ruled-paper rounded-r-lg">
                              <div id="toolbar" class="flex flex-wrap gap-1 mb-4 p-2 bg-stone-100/50 rounded-lg backdrop-blur-sm sticky top-4 z-10">
-                                <button type="button" class="format-btn" data-command="bold" title="Bold"><i data-feather="bold" class="w-5 h-5"></i></button>
-                                <button type="button" class="format-btn" data-command="italic" title="Italic"><i data-feather="italic" class="w-5 h-5"></i></button>
-                                <button type="button" class="format-btn" data-command="underline" title="Underline"><i data-feather="underline" class="w-5 h-5"></i></button>
-                                <button id="ai-prompt-btn" type="button" class="format-btn !ml-auto flex items-center gap-1"><i data-feather="edit-3" class="w-5 h-5"></i> Get AI Prompt</button>
+                                 <button type="button" class="format-btn" data-command="bold" title="Bold"><i data-feather="bold" class="w-5 h-5"></i></button>
+                                 <button type="button" class="format-btn" data-command="italic" title="Italic"><i data-feather="italic" class="w-5 h-5"></i></button>
+                                 <button type="button" class="format-btn" data-command="underline" title="Underline"><i data-feather="underline" class="w-5 h-5"></i></button>
+                                 <button id="ai-prompt-btn" type="button" class="format-btn !ml-auto flex items-center gap-1"><i data-feather="edit-3" class="w-5 h-5"></i> Get AI Prompt</button>
                              </div>
                              <div id="entry-content-editor" contenteditable="true" class="w-full text-stone-700 font-lora text-lg leading-relaxed outline-none resize-none min-h-[40vh]" placeholder="Start writing your story..."></div>
                          </div>
