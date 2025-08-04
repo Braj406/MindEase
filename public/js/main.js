@@ -175,6 +175,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 .filter(entry => entry.isHappy)
                 .sort((a, b) => (a.timestamp?.toDate() || 0) - (b.timestamp?.toDate() || 0));
             
+            // This now correctly calls ONLY the diary renderer when the memories view is active
             if (document.getElementById('memories-view').classList.contains('active')) {
                 renderHappyMemoriesDiary();
             }
@@ -250,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- REPLACES the old renderMemories function ---
+    // --- NEW Diary Renderer ---
     const renderHappyMemoriesDiary = () => {
         if (!dom.diaryPagesContainer) return;
 
