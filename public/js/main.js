@@ -134,6 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
         aiInsightsContainer: document.getElementById('ai-insights-container'),
         aiSentiment: document.getElementById('ai-sentiment'),
         aiSummary: document.getElementById('ai-summary'),
+        analyzePatternsBtn: document.getElementById('analyze-patterns-btn'),
+        patternsResultContainer: document.getElementById('patterns-result-container'),
     };
 
     // --- State and Data ---
@@ -227,7 +229,11 @@ document.addEventListener('DOMContentLoaded', () => {
             link.classList.toggle('font-bold', link.dataset.target === viewId);
         });
         closeMobileSidebar();
-        if (viewId === 'mood-tracker-view') renderMoodTracker();
+        if (viewId === 'mood-tracker-view') {
+            renderMoodTracker();
+            dom.patternsResultContainer.innerHTML = '';
+            dom.analyzePatternsBtn.disabled = false;
+        }
     };
 
     const setEntryViewState = (isEditable, isNew) => {
@@ -303,7 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (memoryForDay) dayDiv.innerHTML += `<div class="w-2 h-2 rounded-full mx-auto mt-1 bg-blue-500"></div>`;
             
-            // FIX: Corrected click handling logic for calendar days
             dayDiv.addEventListener('click', () => {
                 if (currentDate > today) {
                     showCustomAlert("You cannot create or view entries for a future date.", "Future Date");
@@ -313,14 +318,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isTodayFlag = getLocalDateString(currentDate) === getLocalDateString(new Date());
     
                 if (isTodayFlag) {
-                    // For today, it's always editable, whether an entry exists or not.
                     openEntryForEditing(memoryForDay, true, dateStr);
                 } else {
-                    // For past dates, only open if an entry actually exists.
                     if (memoryForDay) {
                         openEntryForEditing(memoryForDay, false, dateStr);
                     } else {
-                        // If no entry, just show a message and do nothing else.
                         showCustomAlert("There is no journal entry for this date.", "No Entry");
                     }
                 }
@@ -624,6 +626,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    const recognizePatterns = async () => {
+        if (journalEntries.length < 3) {
+            showCustomAlert("You need at least 3 journal entries to analyze patterns.", "Not Enough Data");
+            return;
+        }
+
+        dom.analyzePatternsBtn.disabled = true;
+        dom.analyzePatternsBtn.innerHTML = `<i data-feather="loader" class="w-5 h-5 animate-spin"></i> Finding Patterns...`;
+        feather.replace();
+        dom.patternsResultContainer.innerHTML = '';
+
+        try {
+            const response = await fetch('/api/recognize-patterns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ entries: journalEntries, moods: moods })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to get patterns from the server.');
+            }
+
+            const patterns = await response.json();
+            
+            if (patterns && Array.isArray(patterns) && patterns.length > 0) {
+                patterns.forEach(pattern => {
+                    const patternEl = document.createElement('div');
+                    patternEl.className = 'bg-gray-100 p-4 rounded-lg';
+                    patternEl.innerHTML = `
+                        <h4 class="font-semibold text-gray-800">${pattern.title}</h4>
+                        <p class="text-gray-600">${pattern.description}</p>
+                    `;
+                    dom.patternsResultContainer.appendChild(patternEl);
+                });
+            } else {
+                dom.patternsResultContainer.innerHTML = `<p class="text-gray-500">No significant patterns were found at this time. Keep journaling to discover more insights!</p>`;
+            }
+
+        } catch (error) {
+            console.error("Error recognizing patterns:", error);
+            showCustomAlert(`Sorry, we couldn't analyze patterns right now. ${error.message}`, "AI Error");
+            dom.patternsResultContainer.innerHTML = `<p class="text-red-500">An error occurred during analysis.</p>`;
+        } finally {
+            dom.analyzePatternsBtn.disabled = false;
+            dom.analyzePatternsBtn.innerHTML = `<i data-feather="search" class="mr-2"></i> Re-Analyze Patterns`;
+            feather.replace();
+        }
+    };
+
 
     const applySettings = (settings) => {
         if (settings.profilePicture) {
@@ -843,6 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dom.aiPromptBtn.addEventListener('click', getAIPromptForEditor);
         dom.analyzeEntryBtn.addEventListener('click', analyzeEntry);
+        dom.analyzePatternsBtn.addEventListener('click', recognizePatterns);
 
         dom.profilePicUpload.addEventListener('change', async (event) => {
             const file = event.target.files[0];
