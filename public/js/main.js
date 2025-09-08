@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         db = getFirestore(app);
         auth = getAuth(app);
         // This should ideally be your actual App ID for Firestore pathing
-        canvasAppId = firebaseConfig.appId || '1:641145830046:web:b6c1c06d8a7f5e062ed98f; 
+        canvasAppId = firebaseConfig.appId || '1:641145830046:web:b6c1c06d8a7f5e062ed98f'; 
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
@@ -460,3 +460,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
